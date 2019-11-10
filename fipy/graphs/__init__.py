@@ -91,8 +91,10 @@ def graph_callbacks(app):
             raw_x = generate_raw_x(base_positions, raw)
             trace_x = generate_trace_x(base_positions, raw, start, steps, traces)
             base_x = generate_base_x(base_positions, number_of_base_values)
+
             
             for graph in range(2):
+                gernerate_base_legend(figs[graph])
                 for i in (0, 4, 1, 5, 2, 6, 3, 7):
                     y = list(map(lambda y_value: float(y_value[i]) / 255 * max_raw, traces))
                     figs[graph].add_trace(generate_traces(i, trace_x[graph], y, trace_stack))
@@ -199,9 +201,9 @@ def generate_x_to_base_lists(base_positions, raw, start, steps, traces):
 
 
 def gernerate_base_legend(fig):
-    for b in ['A', 'C', 'G', 'U', ]:
+    for b in ['U', 'G', 'C', 'A']:
         fig.add_trace(go.Scatter(x=[0, 0], y=[0, 0], mode='lines', showlegend=True,
-                                 line=dict(color=basecolors[b]), name=b
+                                 line=dict(color=basecolors[b]), name=b, legendgroup=b
                                  ))
 
 
@@ -274,5 +276,5 @@ def generate_traces(i, trace_to_raw, y, trace_stack):
         x=trace_to_raw, y=y,
         **typ,
         line=dict(color=colors[i][1]), name=traceid[i], legendgroup=traceid[i],
-        showlegend=(False if i > 3 else True),
+        showlegend=False,
     )
