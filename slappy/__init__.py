@@ -1,6 +1,4 @@
-
 __version__ = '0.1'
-
 
 
 def devide_page(menu_layout, content_layout, menu_size=20):
@@ -30,3 +28,16 @@ def devide_page(menu_layout, content_layout, menu_size=20):
             ),
         ])
 
+
+def generate_app():
+    import dash
+    
+    from slappy.menu import layout_menu, menu_callbacks
+    from slappy.graphs import layout_graphs, graph_callbacks
+    from slappy import devide_page
+    app = dash.Dash(__name__)
+    app.title = 'Slappy'
+    app.layout = devide_page(layout_menu(), layout_graphs())
+    menu_callbacks(app)
+    graph_callbacks(app)
+    return app

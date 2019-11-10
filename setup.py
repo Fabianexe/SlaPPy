@@ -1,18 +1,19 @@
 from setuptools import setup, find_packages
-from fipy import __version__
+from slappy import __version__
 
 setup(
-    name='FIPY',
+    name='SlaPPy',
     version=__version__,
     packages=find_packages(),
     url='',
     license=' GNU GPLv3',
     author='Fabian Gärtner',
     author_email='fabianexe@gmail.com',
-    description='Fast5 In PrettY', install_requires=['dash', 'h5py', 'numpy', 'dash_daq', 'plotly'],
+    description='SlaPPy - Squiggle and Sequence Plotter in Python',
+    install_requires=['dash', 'h5py', 'numpy', 'dash_daq', 'plotly', 'gunicorn'],
     entry_points={
         'console_scripts': [
-            'fipy = fipy.__main__:main'
+            'slappy = slappy.__main__:main'
         ]
     },
 )
