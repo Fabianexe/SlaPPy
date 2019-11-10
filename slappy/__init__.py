@@ -1,7 +1,21 @@
+"""The starting point to create the app. """
+
 __version__ = '0.1'
+"""The version of the package"""
 
 
 def devide_page(menu_layout, content_layout, menu_size=20):
+    """Generates the base layout of the app with left a menu and right the content.
+    
+    :param menu_layout: The layout of the menu.
+    :type menu_layout: dash.development.base_component.Component.
+    :param content_layout: The layout of the content.
+    :type menu_layout: dash.development.base_component.Component.
+    :param menu_size: The percentage of the page that is taken by the menu, defaults to  20.
+    :type menu_size: int, optional.
+    :return: The finished app layout.
+    :rtype: menu_layout: class:'dash.development.base_component.Component'.
+    """
     import dash_html_components as html
     return html.Div(
         [
@@ -30,6 +44,11 @@ def devide_page(menu_layout, content_layout, menu_size=20):
 
 
 def generate_app():
+    """Generates the ready to run app from sub components.
+    
+    :return: The app ready to start.
+    :rtype: dash.Dash
+    """
     import dash
     
     from slappy.menu import layout_menu, menu_callbacks
