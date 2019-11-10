@@ -1,4 +1,4 @@
-# **SLAPPy** = **S**quigg**L**e **A**nd sequence **P**lotter in **Py**thon
+# **SlaPPy** = **S**quigg**l**e **a**nd sequence **P**lotter in **Py**thon
 
 ## Description
 
@@ -6,7 +6,9 @@ A tool to map sequence to Squiggle out of a fast5 files created by sequencing wi
 
 ## Clone repository
 
-git clone git@github.com:Fabianexe/FIPY.git
+'''
+git clone git@github.com:Fabianexe/SlaPPy
+'''
 
 ## Installing software
 
