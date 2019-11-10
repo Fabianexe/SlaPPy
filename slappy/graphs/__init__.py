@@ -1,7 +1,7 @@
 import dash_core_components as dcc
 import plotly.graph_objs as go
 from dash.dependencies import Input, Output, State
-from fipy.fast5 import Fast5
+from slappy.fast5 import Fast5
 from dash.exceptions import PreventUpdate
 
 

@@ -4,7 +4,7 @@ from dash_table import DataTable
 import dash_daq as daq
 from dash.exceptions import PreventUpdate
 from dash.dependencies import Input, Output, State
-from fipy.fast5 import Fast5
+from slappy.fast5 import Fast5
 
 from os import scandir
 
