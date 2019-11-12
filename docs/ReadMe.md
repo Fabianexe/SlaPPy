@@ -1,4 +1,4 @@
-![enter path](https://raw.githubusercontent.com/Fabianexe/SlaPPy/master/pictures/slappy.png "enter the path here")
+![logo](https://raw.githubusercontent.com/Fabianexe/SlaPPy/master/pictures/slappy.png "logo")
 
 
 # **SlaPPy** = **S**quigg**l**e **a**nd sequence **P**lotter in **Py**thon
