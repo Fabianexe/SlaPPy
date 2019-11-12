@@ -60,7 +60,7 @@ def graph_callbacks(app):
             fig.update_layout(shapes=shapes)
         except KeyError:
             fig.add_trace(create_error_trace(raw))
-        
+        fig["layout"]["yaxis"]["fixedrange"] = True
         return fig, 'tab-preview'
     
     @app.callback(
@@ -103,6 +103,7 @@ def graph_callbacks(app):
                 for i in range(len(base_positions)):
                     figs[graph].add_trace(
                         generate_bases(i, base_y_values, seq, base_x[graph][i], number_of_base_values))
+                figs[graph]["layout"]["yaxis"]["fixedrange"] = True
         except KeyError:
             for graph in range(2):
                 figs[graph].add_trace(create_error_trace(raw))
