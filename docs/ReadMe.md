@@ -40,7 +40,7 @@ Please choose the ONT Guppy basecall group.
 
 You can activate stack traces to display the probabilities for the different nucleotides.
 
-![stack traces](https://github.com/Fabianexe/SlaPPy/blob/master/pictures/stacl_traces.png "stack traces")
+![stack traces](https://github.com/Fabianexe/SlaPPy/blob/master/pictures/stack_traces.png "stack traces")
 
 There are two different view options: Raw based and Base based. 
 
