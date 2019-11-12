@@ -2,7 +2,7 @@
 
 ## Description
 
-A brwoser based GUI to map sequence to Squiggle out of a fast5 files created by sequencing with Oxford Nanopore Technology (ONT). It also provides the possibility to visualize the probability for basecalling of different bases at a certain time or sequence position.
+A browser based GUI to map sequence to Squiggle out of a fast5 files created by sequencing with Oxford Nanopore Technology (ONT). It also provides the possibility to visualize the probability for basecalling of different bases at a certain time or sequence position.
 
 ## Clone repository
 
@@ -26,7 +26,7 @@ starting SlaPPy:
 
 Then the browser based GUI opens.
 
-First choose a fast5 file by entering the file path in the upper left window
-
-![enter path](https://github.com/Fabianexe/SlaPPy/blob/master/pictures/Screenshot%202019-11-11%20at%2011.11.46.png "Test")
+First choose a fast5 file by entering the file path in the upper left window, indicated by an arrowhead in the picture.
+ 
+![enter path](https://github.com/Fabianexe/SlaPPy/blob/master/pictures/path.png "enter the path here")
 
