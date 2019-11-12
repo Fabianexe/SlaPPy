@@ -26,7 +26,11 @@ starting SlaPPy:
 
 Then the browser based GUI opens.
 
-First choose a fast5 file by entering the file path in the upper left window, indicated by an arrowhead in the picture.
+First choose a fast5 file by entering the file path in the upper left window.
  
 ![enter path](https://github.com/Fabianexe/SlaPPy/blob/master/pictures/path.png "enter the path here")
+
+Then you can select a read out of the fast5 file.
+
+![select_read](https://github.com/Fabianexe/SlaPPy/blob/master/pictures/read.png "select a read")
 
