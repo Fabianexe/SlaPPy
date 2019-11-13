@@ -1,7 +1,6 @@
 import dash_core_components as dcc
 import dash_html_components as html
 from dash_table import DataTable
-import dash_daq as daq
 from dash.exceptions import PreventUpdate
 from dash.dependencies import Input, Output, State
 from slappy.fast5 import Fast5
@@ -11,18 +10,18 @@ from os import scandir
 
 def layout_menu():
     return [
-        html.Label(html.Big("Path")),
-        html.Br(),
         html.Div(
             [
+                "Path:",
                 dcc.Input(value='', type='text', id='path', list='list-suggested-inputs',
-                          style={'width': '90%'}),
+                          style={'width': '65%'}),
+                html.Button('Open', id='open'),
                 dcc.Input(value='', type='hidden', id='hidden_path'),
             ],
-            style={'width': '100%', 'vertical-align': 'middle'}
+            style={'width': '100%', 'verticalAlign': 'middle'}
         ),
-        html.Button('Open', id='open'),
-        html.Br(),
+        # html.Button('Open', id='open'),
+        # html.Br(),
         
         DataTable(
             id='reads',
@@ -39,20 +38,17 @@ def layout_menu():
             },
             filter_action="native",
         ),
-        html.Label(html.Big("Basecallgroup")),
         dcc.Dropdown(
             options=[{'label': '000', 'value': '000'}
                      ],
             id='basecalls',
             clearable=False,
             value='000',
-        ),
-        html.Label(html.Big("Stack Traces")),
-        daq.BooleanSwitch(
-            id='trace_stack',
-            on=False
+            style={'zIndex': '1000'}
         ),
         html.Datalist([], id='list-suggested-inputs'),
+        html.Embed(src='/logo.svg', style={'width': '100%', 'verticalAlign': 'middle','position':'absolute','bottom':0}, type='image/svg+xml'),
+
     ]
 
 

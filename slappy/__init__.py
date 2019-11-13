@@ -27,7 +27,7 @@ def devide_page(menu_layout, content_layout, menu_size=20):
                     'position': 'fixed',
                     'top': 0,
                     'left': 0,
-                    'background-color': 'grey'
+                    'backgroundColor': 'grey'
                 }
             ),
             html.Div(
@@ -54,8 +54,10 @@ def generate_app():
     from slappy.menu import layout_menu, menu_callbacks
     from slappy.graphs import layout_graphs, graph_callbacks
     from slappy import devide_page
+    from slappy.statics import setRouts
     app = dash.Dash(__name__)
     app.title = 'Slappy'
+    setRouts(app)
     app.layout = devide_page(layout_menu(), layout_graphs())
     menu_callbacks(app)
     graph_callbacks(app)

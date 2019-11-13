@@ -3,34 +3,42 @@ import plotly.graph_objs as go
 from dash.dependencies import Input, Output, State
 from slappy.fast5 import Fast5
 from dash.exceptions import PreventUpdate
+import dash_html_components as html
+
+import dash_daq as daq
 
 
 def layout_graphs():
     return [
-                dcc.Tabs(id="tabs", value='tab-preview', children=[
-                    dcc.Tab(label='Preview', value='tab-preview', children=[
-                        dcc.Loading(
-                            dcc.Graph(
-                                id='graph_preview',
-                            )
-                        )
-                    ]),
-                    dcc.Tab(label='Raw based', value='tab-raw', children=[
-                        dcc.Loading(
-                            dcc.Graph(
-                                id='graph_raw',
-                            )
-                        )
-                    ]),
-                    dcc.Tab(label='Base based', value='tab-base', children=[
-                        dcc.Loading(
-                            dcc.Graph(
-                                id='graph_base',
-                            )
-                        )
-                    ]),
-                ])
-            ]
+        dcc.Tabs(id="tabs", value='tab-preview', children=[
+            dcc.Tab(label='Preview', value='tab-preview', children=[
+                dcc.Loading(
+                    dcc.Graph(
+                        id='graph_preview',
+                    )
+                )
+            ]),
+            dcc.Tab(label='Raw based', value='tab-raw', children=[
+                dcc.Loading(
+                    dcc.Graph(
+                        id='graph_raw',
+                    )
+                )
+            ]),
+            dcc.Tab(label='Base based', value='tab-base', children=[
+                dcc.Loading(
+                    dcc.Graph(
+                        id='graph_base',
+                    )
+                )
+            ]),
+        ]),
+        html.Label(html.Big("Stack Traces")),
+        daq.BooleanSwitch(
+            id='trace_stack',
+            on=False
+        ),
+    ]
 
 
 def graph_callbacks(app):
@@ -91,7 +99,7 @@ def graph_callbacks(app):
             raw_x = generate_raw_x(base_positions, raw)
             trace_x = generate_trace_x(base_positions, raw, start, steps, traces)
             base_x = generate_base_x(base_positions, number_of_base_values)
-
+            
             for graph in range(2):
                 gernerate_base_legend(figs[graph])
                 for i in (0, 4, 1, 5, 2, 6, 3, 7):
