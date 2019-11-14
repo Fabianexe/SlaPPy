@@ -33,11 +33,15 @@ def layout_graphs():
                 )
             ]),
         ]),
-        html.Label(html.Big("Stack Traces")),
-        daq.BooleanSwitch(
-            id='trace_stack',
-            on=False
-        ),
+        html.H1('Graph Options'),
+        dcc.Checklist(
+            options=[
+                {'label': 'Stack Traces', 'value': 'trace_stack'}
+            ],
+            value=[],
+            id="graph_options",
+            labelStyle={'display': 'inline-block'}
+        )
     ]
 
 
@@ -73,11 +77,12 @@ def graph_callbacks(app):
     
     @app.callback(
         [Output('graph_raw', 'figure'), Output('graph_base', 'figure')],
-        [Input('graph_preview', 'figure'), Input('trace_stack', 'on'), ],
+        [Input('graph_preview', 'figure'), Input('graph_options', 'value'
+                                                                  ), ],
         [State('reads', 'active_cell'), State('basecalls', 'value'),
          State('hidden_path', 'value'), ]
     )
-    def generate_other_graph(_, trace_stack, read_name_list, basecall_group, path):
+    def generate_other_graph(_, options, read_name_list, basecall_group, path):
         if path == '' or read_name_list is None:
             raise PreventUpdate
         read_name = read_name_list['row_id']
@@ -85,6 +90,9 @@ def graph_callbacks(app):
         read = fast5_file[read_name]
         raw = read.get_raw_g0()
         number_of_base_values = 5
+        trace_stack = False
+        if 'trace_stack' in options:
+            trace_stack = True
         
         figs = (go.Figure(), go.Figure())
         try:
