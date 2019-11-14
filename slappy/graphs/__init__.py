@@ -34,13 +34,16 @@ def layout_graphs():
             ]),
         ]),
         html.H1('Graph Options'),
+        html.Big (
         dcc.Checklist(
             options=[
-                {'label': 'Stack Traces', 'value': 'trace_stack'}
+                {'label': 'Stack Traces', 'value': 'trace_stack'},
+                {'label': 'Normalize to 1', 'value': 'normalize'},
             ],
             value=[],
             id="graph_options",
-            labelStyle={'display': 'inline-block'}
+            labelStyle={'display': 'inline-block', 'padding': 10}
+        )
         )
     ]
 
@@ -93,6 +96,10 @@ def graph_callbacks(app):
         trace_stack = False
         if 'trace_stack' in options:
             trace_stack = True
+        normalize = False
+        if 'normalize' in options:
+            normalize = True
+        
         
         figs = (go.Figure(), go.Figure())
         try:
@@ -102,16 +109,27 @@ def graph_callbacks(app):
             start = read.get_start(basecall_group)
             steps = read.get_step(basecall_group)
             max_raw = max(raw)
-            base_y_values = [max_raw / x for x in range(1, number_of_base_values)] + [0]
+            
+            if normalize:
+                base_y_values = [1 / x for x in range(1, number_of_base_values)] + [0]
+                raw = [raw_value/max_raw for raw_value in raw]
+            else:
+                base_y_values = [max_raw / x for x in range(1, number_of_base_values)] + [0]
+           
             
             raw_x = generate_raw_x(base_positions, raw)
             trace_x = generate_trace_x(base_positions, raw, start, steps, traces)
             base_x = generate_base_x(base_positions, number_of_base_values)
+
+            
             
             for graph in range(2):
                 gernerate_base_legend(figs[graph])
                 for i in (0, 4, 1, 5, 2, 6, 3, 7):
-                    y = list(map(lambda y_value: float(y_value[i]) / 255 * max_raw, traces))
+                    if normalize:
+                        y = list(map(lambda y_value: float(y_value[i]) / 255, traces))
+                    else:
+                        y = list(map(lambda y_value: float(y_value[i]) / 255 * max_raw, traces))
                     figs[graph].add_trace(generate_traces(i, trace_x[graph], y, trace_stack))
                 figs[graph].add_trace(generate_raw(raw, raw_x[graph]))
                 figs[graph].add_trace(generate_base_legend())
@@ -127,11 +145,11 @@ def graph_callbacks(app):
 
 
 colors = [
-             ('rgba(138,43,226,0.5)', 'rgba(138,43,226,1)'),
-             ('rgba(0,128,0,0.5)', 'rgba(0,128,0,1)'),
-             ('rgba(0,0,255,0.5)', 'rgba(0,0,255,1)'),
-             ('rgba(255,192,203,0.5)', 'rgba(255,192,203,1)'),
-         ] * 2
+                 ('rgba(138,43,226,0.5)', 'rgba(138,43,226,1)'),
+                 ('rgba(0,128,0,0.5)', 'rgba(0,128,0,1)'),
+                 ('rgba(0,0,255,0.5)', 'rgba(0,0,255,1)'),
+                 ('rgba(255,192,203,0.5)', 'rgba(255,192,203,1)'),
+             ] * 2
 
 basecolors = {
     'A': colors[0][0],
