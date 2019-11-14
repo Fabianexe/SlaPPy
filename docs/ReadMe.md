@@ -35,9 +35,15 @@ Then you can select a read out of the fast5 file.
 
 ![select_read](https://raw.githubusercontent.com/Fabianexe/SlaPPy/master/pictures/read_selection.png "select a read")
 
+It is also possible to filter reads using the read-id.
+
+![filter reads](https://raw.githubusercontent.com/Fabianexe/SlaPPy/master/pictures/filter_reads.png "Filter reads")
+
 Please choose the ONT Guppy basecall group.
 
 ![select_basecall_group](https://raw.githubusercontent.com/Fabianexe/SlaPPy/master/pictures/basecallgroup.png "select basecall group")
+
+## display options
 
 You can activate stack traces to display the probabilities for the different nucleotides.
 
@@ -57,4 +63,10 @@ In both modes, red vertical lines mark the positions where a certain base was ca
 
 In both modes you can zoom in and get a closer look at certain areas by choosing the desired area manual. 
 You can also, when Stack Traces is activated, display how likely it is to call which Base at which time. 
-This shows the size of the area in the corresponding color, which can be seen in the legend on the right. 
+This shows the size of the area in the corresponding color, which can be seen in the legend on the right.
+
+It is also possible by double clicking on a certain nucleotide in the legend to show a single trace.
+
+![single_trace](https://raw.githubusercontent.com/Fabianexe/SlaPPy/master/pictures/single_trace.png "single trace")
+
+compare data on hover
