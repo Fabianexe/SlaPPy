@@ -37,7 +37,7 @@ Then you can select a read out of the fast5 file.
 
 It is also possible to filter reads using the read-id.
 
-![filter reads](https://raw.githubusercontent.com/Fabianexe/SlaPPy/master/pictures/filter_reads.png "Filter reads")
+![filter reads](https://raw.githubusercontent.com/Fabianexe/SlaPPy/master/pictures/ "Filter reads")
 
 Please choose the ONT Guppy basecall group.
 
