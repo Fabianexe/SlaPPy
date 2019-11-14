@@ -8,13 +8,13 @@
 ## Clone repository
 
 ```
->>>git clone git@github.com:Fabianexe/SlaPPy
+git clone git@github.com:Fabianexe/SlaPPy
 ```
 
 ## Installing software
 
 ```
->>>python3 setup.py install
+python3 setup.py install
 ```
 
 ## Running SlaPPy
@@ -22,7 +22,7 @@
 starting SlaPPy:
 
 ```
->>>slappy
+slappy
 ``` 
 
 Then the browser based GUI opens.
