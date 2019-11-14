@@ -37,7 +37,7 @@ Then you can select a read out of the fast5 file.
 
 It is also possible to filter reads using the read-id.
 
-![filter reads](https://raw.githubusercontent.com/Fabianexe/SlaPPy/master/pictures/ "Filter reads")
+![filter reads](https://raw.githubusercontent.com/Fabianexe/SlaPPy/master/pictures/filter_reads.png "Filter reads")
 
 Please choose the ONT Guppy basecall group.
 
@@ -69,4 +69,6 @@ It is also possible by double clicking on a certain nucleotide in the legend to 
 
 ![single_trace](https://raw.githubusercontent.com/Fabianexe/SlaPPy/master/pictures/single_trace.png "single trace")
 
-compare data on hover
+By selecting compare data on hover in the menu, you can display the traces at a certain position.
+
+![compare data](https://raw.githubusercontent.com/Fabianexe/SlaPPy/master/pictures/compare_hover.png "compare data hover")
