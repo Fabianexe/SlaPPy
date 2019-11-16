@@ -1,6 +1,8 @@
 import dash_core_components as dcc
 import plotly.graph_objs as go
 from dash.dependencies import Input, Output, State
+
+from slappy.baseprobability import BaseProbertilites
 from slappy.fast5 import Fast5
 from dash.exceptions import PreventUpdate
 import dash_html_components as html
@@ -32,18 +34,25 @@ def layout_graphs():
                     )
                 )
             ]),
+            dcc.Tab(label='Base probability', value='tab-prob', children=[
+                dcc.Loading(
+                    dcc.Graph(
+                        id='graph_prob',
+                    )
+                )
+            ]),
         ]),
         html.H1('Graph Options'),
-        html.Big (
-        dcc.Checklist(
-            options=[
-                {'label': 'Stack Traces', 'value': 'trace_stack'},
-                {'label': 'Normalize to 1', 'value': 'normalize'},
-            ],
-            value=[],
-            id="graph_options",
-            labelStyle={'display': 'inline-block', 'padding': 10}
-        )
+        html.Big(
+            dcc.Checklist(
+                options=[
+                    {'label': 'Stack Traces', 'value': 'trace_stack'},
+                    {'label': 'Normalize to 1', 'value': 'normalize'},
+                ],
+                value=[],
+                id="graph_options",
+                labelStyle={'display': 'inline-block', 'padding': 10}
+            )
         )
     ]
 
@@ -81,7 +90,7 @@ def graph_callbacks(app):
     @app.callback(
         [Output('graph_raw', 'figure'), Output('graph_base', 'figure')],
         [Input('graph_preview', 'figure'), Input('graph_options', 'value'
-                                                                  ), ],
+                                                 ), ],
         [State('reads', 'active_cell'), State('basecalls', 'value'),
          State('hidden_path', 'value'), ]
     )
@@ -100,7 +109,6 @@ def graph_callbacks(app):
         if 'normalize' in options:
             normalize = True
         
-        
         figs = (go.Figure(), go.Figure())
         try:
             base_positions = read.get_basepositions(basecall_group)
@@ -112,16 +120,13 @@ def graph_callbacks(app):
             
             if normalize:
                 base_y_values = [1 / x for x in range(1, number_of_base_values)] + [0]
-                raw = [raw_value/max_raw for raw_value in raw]
+                raw = [raw_value / max_raw for raw_value in raw]
             else:
                 base_y_values = [max_raw / x for x in range(1, number_of_base_values)] + [0]
-           
             
             raw_x = generate_raw_x(base_positions, raw)
             trace_x = generate_trace_x(base_positions, raw, start, steps, traces)
             base_x = generate_base_x(base_positions, number_of_base_values)
-
-            
             
             for graph in range(2):
                 gernerate_base_legend(figs[graph])
@@ -142,14 +147,86 @@ def graph_callbacks(app):
                 figs[graph].add_trace(create_error_trace(raw))
         
         return figs
+    
+    @app.callback(
+        Output('graph_prob', 'figure'),
+        [Input('graph_preview', 'figure'), Input('graph_options', 'value'
+                                                 ), ],
+        [State('reads', 'active_cell'), State('basecalls', 'value'),
+         State('hidden_path', 'value'), ]
+    )
+    def generate_prob_graph(_, options, read_name_list, basecall_group, path):
+        if path == '' or read_name_list is None:
+            raise PreventUpdate
+        read_name = read_name_list['row_id']
+        fast5_file = Fast5(path)
+        read = fast5_file[read_name]
+        
+        fig = go.Figure()
+        try:
+            seq = read.get_seq(basecall_group)
+            traces = read.get_traces(basecall_group)
+            moves = read.get_moves(basecall_group)
+            prop = BaseProbertilites(traces, moves)
+            prop.up_to_next_call()
+            # prop.at_call()
+            # prop.around_call()
+            prop.make_logo()
+            
+            fig.update_layout(
+                xaxis=dict(
+                    tickmode='array',
+                    tickvals=list(range(len(seq))),
+                    ticktext=list(seq)
+                )
+            )
+            
+            shapes = []
+            for i, probabilities in enumerate(prop.order_by_probability()):
+                sum = 0
+                for prob in probabilities:
+                    shape = go.layout.Shape(
+                        type="rect",
+                        x0=i - 0.5,
+                        y0=sum,
+                        x1=i + 0.5,
+                        y1=sum + prob[1],
+                        line=dict(
+                            width=0,
+                        ),
+                        fillcolor=basecolors[prob[0]],
+                    )
+                    shapes.append(shape)
+                    sum += prob[1]
+            fig.update_layout(shapes=shapes)
+            fig.add_trace(go.Scatter(x=[0, len(prop)], y=[0, 2], mode='markers',showlegend=False))
+            # for i in range(4):
+            #     fig.add_trace(
+            #         go.Scatter(x=list(range(len(traces))), y=[y[i] for y in prop.get_probability()], mode='lines',
+            #                    showlegend=True, line=dict(color=colors[i][1]), name=traceid[i],
+            #                    )
+            #     )
+            
+            fig["layout"]["yaxis"]["fixedrange"] = True
+        
+        except KeyError:
+            for graph in range(2):
+                fig.add_trace(create_error_trace([0, 0, 0, 0, 0]))
+        
+        return fig
 
 
 colors = [
-                 ('rgba(138,43,226,0.5)', 'rgba(138,43,226,1)'),
-                 ('rgba(0,128,0,0.5)', 'rgba(0,128,0,1)'),
-                 ('rgba(0,0,255,0.5)', 'rgba(0,0,255,1)'),
-                 ('rgba(255,192,203,0.5)', 'rgba(255,192,203,1)'),
-             ] * 2
+             ('rgba(0,255,0,0.5)', 'rgba(0,255,0,1)'),
+             ('rgba(0,0,255,0.5)', 'rgba(0,0,255,1)'),
+             ('rgba(255,255,0,0.5)', 'rgba(255,255,0,1)'),
+             ('rgba(0,255,255,0.5)', 'rgba(0,255,255,1)'),
+         ] * 2
+# 138,43,226,0.5)', 'rgba(138,43,226,1)'),
+#              ('rgba(0,128,0,0.5)', 'rgba(0,128,0,1)'),
+#              ('rgba(0,0,255,0.5)', 'rgba(0,0,255,1)'),
+#              ('rgba(255,192,203,0.5)', 'rgba(255,192,203,1)'),
+#          ] * 2
 
 basecolors = {
     'A': colors[0][0],
