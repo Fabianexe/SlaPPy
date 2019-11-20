@@ -7,7 +7,27 @@ from slappy.fast5 import Fast5
 from dash.exceptions import PreventUpdate
 import dash_html_components as html
 
-import dash_daq as daq
+from slappy.svg import get_nuc
+
+colors = [
+             ('rgba(0,255,0,0.5)', 'rgba(0,255,0,1)'),
+             ('rgba(0,0,255,0.5)', 'rgba(0,0,255,1)'),
+             ('rgba(255,255,0,0.5)', 'rgba(255,255,0,1)'),
+             ('rgba(0,255,255,0.5)', 'rgba(0,255,255,1)'),
+         ] * 2
+# 138,43,226,0.5)', 'rgba(138,43,226,1)'),
+#              ('rgba(0,128,0,0.5)', 'rgba(0,128,0,1)'),
+#              ('rgba(0,0,255,0.5)', 'rgba(0,0,255,1)'),
+#              ('rgba(255,192,203,0.5)', 'rgba(255,192,203,1)'),
+#          ] * 2
+
+basecolors = {
+    'A': colors[0][0],
+    'C': colors[1][0],
+    'G': colors[2][0],
+    'U': colors[3][0],
+}
+traceid = ['A', 'C', 'G', 'U'] * 2
 
 
 def layout_graphs():
@@ -183,30 +203,14 @@ def graph_callbacks(app):
             
             shapes = []
             for i, probabilities in enumerate(prop.order_by_probability()):
-                sum = 0
+                prob_sum = 0
                 for prob in probabilities:
-                    shape = go.layout.Shape(
-                        type="rect",
-                        x0=i - 0.5,
-                        y0=sum,
-                        x1=i + 0.5,
-                        y1=sum + prob[1],
-                        line=dict(
-                            width=0,
-                        ),
-                        fillcolor=basecolors[prob[0]],
-                    )
+                    shape = get_nuc(prob[0], i - 0.5, 1, prob_sum, prob[1], basecolors[prob[0]])
                     shapes.append(shape)
-                    sum += prob[1]
+                    prob_sum += prob[1]
             fig.update_layout(shapes=shapes)
-            fig.add_trace(go.Scatter(x=[0, len(prop)], y=[0, 2], mode='markers',showlegend=False))
-            # for i in range(4):
-            #     fig.add_trace(
-            #         go.Scatter(x=list(range(len(traces))), y=[y[i] for y in prop.get_probability()], mode='lines',
-            #                    showlegend=True, line=dict(color=colors[i][1]), name=traceid[i],
-            #                    )
-            #     )
             
+            fig.add_trace(go.Scatter(x=[0, len(prop)], y=[0, 2], mode='markers', showlegend=False))
             fig["layout"]["yaxis"]["fixedrange"] = True
         
         except KeyError:
@@ -214,27 +218,6 @@ def graph_callbacks(app):
                 fig.add_trace(create_error_trace([0, 0, 0, 0, 0]))
         
         return fig
-
-
-colors = [
-             ('rgba(0,255,0,0.5)', 'rgba(0,255,0,1)'),
-             ('rgba(0,0,255,0.5)', 'rgba(0,0,255,1)'),
-             ('rgba(255,255,0,0.5)', 'rgba(255,255,0,1)'),
-             ('rgba(0,255,255,0.5)', 'rgba(0,255,255,1)'),
-         ] * 2
-# 138,43,226,0.5)', 'rgba(138,43,226,1)'),
-#              ('rgba(0,128,0,0.5)', 'rgba(0,128,0,1)'),
-#              ('rgba(0,0,255,0.5)', 'rgba(0,0,255,1)'),
-#              ('rgba(255,192,203,0.5)', 'rgba(255,192,203,1)'),
-#          ] * 2
-
-basecolors = {
-    'A': colors[0][0],
-    'C': colors[1][0],
-    'G': colors[2][0],
-    'U': colors[3][0],
-}
-traceid = ['A', 'C', 'G', 'U'] * 2
 
 
 def generate_base_x(base_positions, number_of_base_values):

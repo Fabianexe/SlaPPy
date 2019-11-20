@@ -31,7 +31,6 @@ class BaseProbertilites:
         prop = [0, 0, 0, 0]
         for i in range(len(self._traces)):
             if self._moves[i] == 1:
-                print(len(self._probability))
                 if sum_traces != 0:
                     self._probability.append([k / sum_traces for k in prop])
                 sum_traces = 0
@@ -84,7 +83,6 @@ class BaseProbertilites:
     def order_by_probability(self):
         i = 0
         for props in self._probability:
-            print(i)
             i+=1
             yield sorted([(trace_id[i], x) for i, x in enumerate(props)], key=lambda x: x[1])
     
