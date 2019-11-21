@@ -56,24 +56,44 @@ def layout_graphs():
             ]),
             dcc.Tab(label='Base probability', value='tab-prob', children=[
                 dcc.Loading(
-                    dcc.Graph(
-                        id='graph_prob',
+                    [
+                        dcc.Graph(
+                            id='graph_prob',
+                        ),
+                    ]
+                ),
+                html.H1('Logo Options'),
+                html.Big(
+                    dcc.RadioItems(
+                        options=[
+                            {'label': 'Up next', 'value': 'up'},
+                            {'label': 'At call', 'value': 'at'},
+                            {'label': 'Around', 'value': 'ar'},
+                        ],
+                        value='up',
+                        id="logo_options",
+                        labelStyle={'display': 'inline-block', 'padding': 10}
                     )
                 )
             ]),
+        
         ]),
-        html.H1('Graph Options'),
-        html.Big(
-            dcc.Checklist(
-                options=[
-                    {'label': 'Stack Traces', 'value': 'trace_stack'},
-                    {'label': 'Normalize to 1', 'value': 'normalize'},
-                ],
-                value=[],
-                id="graph_options",
-                labelStyle={'display': 'inline-block', 'padding': 10}
+        html.Div([
+            html.H1('Graph Options'),
+            html.Big(
+                dcc.Checklist(
+                    options=[
+                        {'label': 'Stack Traces', 'value': 'trace_stack'},
+                        {'label': 'Normalize to 1', 'value': 'normalize'},
+                    ],
+                    value=[],
+                    id="graph_options",
+                    labelStyle={'display': 'inline-block', 'padding': 10}
+                )
             )
-        )
+        ],
+            id='hide_options'
+        ),
     ]
 
 
@@ -170,12 +190,12 @@ def graph_callbacks(app):
     
     @app.callback(
         Output('graph_prob', 'figure'),
-        [Input('graph_preview', 'figure'), Input('graph_options', 'value'
+        [Input('graph_preview', 'figure'), Input('logo_options', 'value'
                                                  ), ],
         [State('reads', 'active_cell'), State('basecalls', 'value'),
          State('hidden_path', 'value'), ]
     )
-    def generate_prob_graph(_, options, read_name_list, basecall_group, path):
+    def generate_logo(_, option, read_name_list, basecall_group, path):
         if path == '' or read_name_list is None:
             raise PreventUpdate
         read_name = read_name_list['row_id']
@@ -188,9 +208,14 @@ def graph_callbacks(app):
             traces = read.get_traces(basecall_group)
             moves = read.get_moves(basecall_group)
             prop = BaseProbertilites(traces, moves)
-            prop.up_to_next_call()
-            # prop.at_call()
-            # prop.around_call()
+            if option == 'up':
+                prop.up_to_next_call()
+            elif option == 'at':
+                prop.at_call()
+            elif option == 'ar':
+                prop.around_call()
+            else:
+                raise KeyError()
             prop.make_logo()
             
             fig.update_layout(
@@ -218,7 +243,16 @@ def graph_callbacks(app):
                 fig.add_trace(create_error_trace([0, 0, 0, 0, 0]))
         
         return fig
-
+    
+    @app.callback(
+        Output('hide_options', 'style'),
+        [Input('tabs', 'value'), ]
+    )
+    def hide_options(tab):
+        if tab == 'tab-base' or tab == 'tab-raw':
+            return {'display': 'block'}
+        else:
+            return {'display': 'none'}
 
 def generate_base_x(base_positions, number_of_base_values):
     return [[[x] * number_of_base_values for x in base_positions],
