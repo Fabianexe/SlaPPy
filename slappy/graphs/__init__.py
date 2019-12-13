@@ -1,11 +1,33 @@
 import dash_core_components as dcc
 import plotly.graph_objs as go
 from dash.dependencies import Input, Output, State
+
+from slappy.baseprobability import BaseProbertilites
 from slappy.fast5 import Fast5
 from dash.exceptions import PreventUpdate
 import dash_html_components as html
 
-import dash_daq as daq
+from slappy.svg import get_nuc
+
+colors = [
+             ('rgba(0,255,0,0.5)', 'rgba(0,255,0,1)'),
+             ('rgba(0,0,255,0.5)', 'rgba(0,0,255,1)'),
+             ('rgba(255,255,0,0.5)', 'rgba(255,255,0,1)'),
+             ('rgba(0,255,255,0.5)', 'rgba(0,255,255,1)'),
+         ] * 2
+# 138,43,226,0.5)', 'rgba(138,43,226,1)'),
+#              ('rgba(0,128,0,0.5)', 'rgba(0,128,0,1)'),
+#              ('rgba(0,0,255,0.5)', 'rgba(0,0,255,1)'),
+#              ('rgba(255,192,203,0.5)', 'rgba(255,192,203,1)'),
+#          ] * 2
+
+basecolors = {
+    'A': colors[0][0],
+    'C': colors[1][0],
+    'G': colors[2][0],
+    'U': colors[3][0],
+}
+traceid = ['A', 'C', 'G', 'U'] * 2
 
 
 def layout_graphs():
@@ -32,19 +54,46 @@ def layout_graphs():
                     )
                 )
             ]),
+            dcc.Tab(label='Base probability', value='tab-prob', children=[
+                dcc.Loading(
+                    [
+                        dcc.Graph(
+                            id='graph_prob',
+                        ),
+                    ]
+                ),
+                html.H1('Logo Options'),
+                html.Big(
+                    dcc.RadioItems(
+                        options=[
+                            {'label': 'Up next', 'value': 'up'},
+                            {'label': 'At call', 'value': 'at'},
+                            {'label': 'Around', 'value': 'ar'},
+                        ],
+                        value='up',
+                        id="logo_options",
+                        labelStyle={'display': 'inline-block', 'padding': 10}
+                    )
+                )
+            ]),
+        
         ]),
-        html.H1('Graph Options'),
-        html.Big (
-        dcc.Checklist(
-            options=[
-                {'label': 'Stack Traces', 'value': 'trace_stack'},
-                {'label': 'Normalize to 1', 'value': 'normalize'},
-            ],
-            value=[],
-            id="graph_options",
-            labelStyle={'display': 'inline-block', 'padding': 10}
-        )
-        )
+        html.Div([
+            html.H1('Graph Options'),
+            html.Big(
+                dcc.Checklist(
+                    options=[
+                        {'label': 'Stack Traces', 'value': 'trace_stack'},
+                        {'label': 'Normalize to 1', 'value': 'normalize'},
+                    ],
+                    value=[],
+                    id="graph_options",
+                    labelStyle={'display': 'inline-block', 'padding': 10}
+                )
+            )
+        ],
+            id='hide_options'
+        ),
     ]
 
 
@@ -65,13 +114,13 @@ def graph_callbacks(app):
         fig = go.Figure()
         gernerate_base_legend(fig)
         
-        fig.add_trace(generate_raw(raw, list(range(len(raw)))))
+        fig.add_trace(generate_raw(raw, list(reversed(range(len(raw))))))
         try:
             max_raw = max(raw)
-            base_positions = read.get_basepositions(basecall_group)
+            base_positions = revers_x(read.get_basepositions(basecall_group), len(raw))
             seq = read.get_seq(basecall_group)
             
-            shapes = generate_base_shapes(base_positions, max_raw, len(raw), seq)
+            shapes = generate_base_shapes(base_positions, max_raw, seq)
             fig.update_layout(shapes=shapes)
         except KeyError:
             fig.add_trace(create_error_trace(raw))
@@ -81,7 +130,7 @@ def graph_callbacks(app):
     @app.callback(
         [Output('graph_raw', 'figure'), Output('graph_base', 'figure')],
         [Input('graph_preview', 'figure'), Input('graph_options', 'value'
-                                                                  ), ],
+                                                 ), ],
         [State('reads', 'active_cell'), State('basecalls', 'value'),
          State('hidden_path', 'value'), ]
     )
@@ -100,11 +149,10 @@ def graph_callbacks(app):
         if 'normalize' in options:
             normalize = True
         
-        
         figs = (go.Figure(), go.Figure())
         try:
             base_positions = read.get_basepositions(basecall_group)
-            seq = read.get_seq(basecall_group)
+            seq = '-' + read.get_seq(basecall_group)
             traces = read.get_traces(basecall_group)
             start = read.get_start(basecall_group)
             steps = read.get_step(basecall_group)
@@ -112,57 +160,114 @@ def graph_callbacks(app):
             
             if normalize:
                 base_y_values = [1 / x for x in range(1, number_of_base_values)] + [0]
-                raw = [raw_value/max_raw for raw_value in raw]
+                raw = [raw_value / max_raw for raw_value in raw]
             else:
                 base_y_values = [max_raw / x for x in range(1, number_of_base_values)] + [0]
-           
             
             raw_x = generate_raw_x(base_positions, raw)
             trace_x = generate_trace_x(base_positions, raw, start, steps, traces)
-            base_x = generate_base_x(base_positions, number_of_base_values)
-
-            
+            base_x = generate_base_x(base_positions, number_of_base_values, len(raw))
             
             for graph in range(2):
                 gernerate_base_legend(figs[graph])
                 for i in (0, 4, 1, 5, 2, 6, 3, 7):
                     if normalize:
-                        y = list(map(lambda y_value: float(y_value[i]) / 255, traces))
+                        y = [0] + list(map(lambda y_value: float(y_value[i]) / 255, traces))
                     else:
-                        y = list(map(lambda y_value: float(y_value[i]) / 255 * max_raw, traces))
+                        y = [0] + list(map(lambda y_value: float(y_value[i]) / 255 * max_raw, traces))
                     figs[graph].add_trace(generate_traces(i, trace_x[graph], y, trace_stack))
                 figs[graph].add_trace(generate_raw(raw, raw_x[graph]))
                 figs[graph].add_trace(generate_base_legend())
-                for i in range(len(base_positions)):
+                for i in range(0, len(base_positions)+1):
                     figs[graph].add_trace(
-                        generate_bases(i, base_y_values, seq, base_x[graph][i], number_of_base_values))
+                        generate_bases(i, base_y_values, seq, base_x[graph][i], number_of_base_values, len(base_positions)+1))
                 figs[graph]["layout"]["yaxis"]["fixedrange"] = True
         except KeyError:
             for graph in range(2):
                 figs[graph].add_trace(create_error_trace(raw))
         
         return figs
+    
+    @app.callback(
+        Output('graph_prob', 'figure'),
+        [Input('graph_preview', 'figure'), Input('logo_options', 'value'
+                                                 ), ],
+        [State('reads', 'active_cell'), State('basecalls', 'value'),
+         State('hidden_path', 'value'), ]
+    )
+    def generate_logo(_, option, read_name_list, basecall_group, path):
+        if path == '' or read_name_list is None:
+            raise PreventUpdate
+        read_name = read_name_list['row_id']
+        fast5_file = Fast5(path)
+        read = fast5_file[read_name]
+        
+        fig = go.Figure()
+        try:
+            seq = read.get_rev_seq(basecall_group)
+            traces = read.get_traces(basecall_group)
+            moves = read.get_moves(basecall_group)
+            prop = BaseProbertilites(traces, moves)
+            if option == 'up':
+                prop.up_to_next_call()
+            elif option == 'at':
+                prop.at_call()
+            elif option == 'ar':
+                prop.around_call()
+            else:
+                raise KeyError()
+            prop.make_logo()
+            
+            fig.update_layout(
+                xaxis=dict(
+                    tickmode='array',
+                    tickvals=list(range(len(seq))),
+                    ticktext=[x + '<br>' + str(i) for i, x in enumerate(seq)],
+                    showgrid=False,
+                    tickangle=0,
+                    zeroline=False,
+                ),
+                yaxis=dict(
+                    gridcolor='grey',
+                ),
+                plot_bgcolor='white',
+            )
+            
+            shapes = []
+            for i, probabilities in enumerate(reversed(list(prop.order_by_probability()))):
+                prob_sum = 0
+                for prob in probabilities:
+                    shape = get_nuc(prob[0], i - 0.5, 1, prob_sum, prob[1], basecolors[prob[0]])
+                    shapes.append(shape)
+                    prob_sum += prob[1]
+            fig.update_layout(shapes=shapes)
+            
+            fig.add_trace(go.Scatter(x=[0, len(prop)], y=[0, 2], mode='markers', showlegend=False))
+            fig["layout"]["yaxis"]["fixedrange"] = True
+        
+        except KeyError:
+            for graph in range(2):
+                fig.add_trace(create_error_trace([0, 0, 0, 0, 0]))
+        
+        return fig
+    
+    @app.callback(
+        Output('hide_options', 'style'),
+        [Input('tabs', 'value'), ]
+    )
+    def hide_options(tab):
+        if tab == 'tab-base' or tab == 'tab-raw':
+            return {'display': 'block'}
+        else:
+            return {'display': 'none'}
+
+def revers_x(x_coordinates, m):
+    return [m-x for x in x_coordinates] + [0]
 
 
-colors = [
-                 ('rgba(138,43,226,0.5)', 'rgba(138,43,226,1)'),
-                 ('rgba(0,128,0,0.5)', 'rgba(0,128,0,1)'),
-                 ('rgba(0,0,255,0.5)', 'rgba(0,0,255,1)'),
-                 ('rgba(255,192,203,0.5)', 'rgba(255,192,203,1)'),
-             ] * 2
-
-basecolors = {
-    'A': colors[0][0],
-    'C': colors[1][0],
-    'G': colors[2][0],
-    'U': colors[3][0],
-}
-traceid = ['A', 'C', 'G', 'U'] * 2
-
-
-def generate_base_x(base_positions, number_of_base_values):
-    return [[[x] * number_of_base_values for x in base_positions],
-            [[i + 1] * number_of_base_values for i in range(len(base_positions))]
+def generate_base_x(base_positions, number_of_base_values, len_raw):
+    return [[[len_raw-x] * number_of_base_values for x in base_positions] + [[0]*number_of_base_values],
+            [[len(base_positions)-i] * number_of_base_values for i in range(len(base_positions))] + [[0]*number_of_base_values]
             ]
 
 
@@ -182,9 +287,10 @@ def generate_raw_x(base_positions, raw):
                 diff = len(raw) - i
         
         val = (i - last) / diff + j
-        raw_to_base.append(val)
-        raw_to_raw.append(i)
-    
+        raw_to_base.append(len(base_positions)+1 - val)
+        raw_to_raw.append(len(raw) - i)
+    raw_to_base.append(0)
+    raw_to_raw.append(0)
     return raw_to_raw, raw_to_base
 
 
@@ -206,32 +312,11 @@ def generate_trace_x(base_positions, raw, start, steps, traces):
         
         val = (i - last) / diff + j
         if i in trace_set:
-            trace_to_base.append(val)
-            trace_to_raw.append(i)
+            trace_to_base.append(len(base_positions)+1 - val)
+            trace_to_raw.append(len(raw) - i)
+    trace_to_base.append(0)
+    trace_to_raw.append(0)
     return trace_to_raw, trace_to_base
-
-
-def generate_x_to_base_lists(base_positions, raw, start, steps, traces):
-    trace_set = set(range(start, start + steps * len(traces), 10))
-    last = 0
-    raw_to_base = []
-    trace_to_base = []
-    j = 0
-    diff = base_positions[j]
-    for i in range(len(raw)):
-        if j < len(base_positions) and i == base_positions[j]:
-            last = i
-            j += 1
-            if j < len(base_positions):
-                diff = base_positions[j] - i
-            else:
-                diff = len(raw) - i
-        
-        val = (i - last) / diff + j
-        raw_to_base.append(val)
-        if i in trace_set:
-            trace_to_base.append(val)
-    return raw_to_base, trace_to_base
 
 
 def gernerate_base_legend(fig):
@@ -241,14 +326,14 @@ def gernerate_base_legend(fig):
                                  ))
 
 
-def generate_base_shapes(base_positions, max_raw, len_raw, seq):
+def generate_base_shapes(base_positions, max_raw, seq):
     shapes = []
-    for i, x in enumerate(base_positions):
+    for i, x in enumerate(base_positions[:-1]):
         shape = go.layout.Shape(
             type="rect",
             x0=x,
             y0=0,
-            x1=base_positions[i + 1] if i + 1 < len(base_positions) else len_raw,
+            x1=base_positions[i + 1],
             y1=max_raw,
             line=dict(
                 width=0,
@@ -288,9 +373,9 @@ def generate_base_legend():
                       )
 
 
-def generate_bases(i, base_y_values, seq, x1, number_per_base):
+def generate_bases(i, base_y_values, seq, x1, number_per_base, len_seq):
     return go.Scatter(x=x1, y=base_y_values, mode='lines+text', showlegend=False,
-                      hovertext=[seq[i] + '<br>' + str(i)] * number_per_base, hoverinfo="text", line=dict(color='red'),
+                      hovertext=[seq[i] + '<br>' + str(len_seq-i)] * number_per_base, hoverinfo="text", line=dict(color='red'),
                       legendgroup="bases",
                       text=[seq[i]] + [''] * (number_per_base - 1),
                       textposition="top center",
