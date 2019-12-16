@@ -55,7 +55,8 @@ def generate_app():
     from slappy.graphs import layout_graphs, graph_callbacks
     from slappy import devide_page
     from slappy.statics import setRouts
-    app = dash.Dash(__name__)
+    import dash_bootstrap_components as dbc
+    app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
     app.title = 'Slappy'
     setRouts(app)
     app.layout = devide_page(layout_menu(), layout_graphs())
