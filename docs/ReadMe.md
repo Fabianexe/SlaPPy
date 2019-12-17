@@ -5,7 +5,7 @@
 
  **SlaPPy** (**S**quigg**l**e **a**nd sequence **P**lotter in **Py**thon) is a browser based GUI to map sequence to Squiggle out of a fast5 files created by sequencing with Oxford Nanopore Technology (ONT). It also provides the possibility to visualize the probability for basecalling of different bases at a certain time or sequence position.
 
-## Clone repository
+## Cloning repository
 
 ```
 git clone git@github.com:Fabianexe/SlaPPy
@@ -43,7 +43,7 @@ Please choose the ONT Guppy basecall group.
 
 ![select_basecall_group](https://raw.githubusercontent.com/Fabianexe/SlaPPy/master/pictures/basecallgroup.png "select basecall group")
 
-## display options
+## Displaying options
 
 You can activate stack traces to display the probabilities for the different nucleotides.
 
@@ -72,3 +72,9 @@ It is also possible by double clicking on a certain nucleotide in the legend to 
 By selecting compare data on hover in the menu, you can display the traces at a certain position.
 
 ![compare data](https://raw.githubusercontent.com/Fabianexe/SlaPPy/master/pictures/compare_hover.png "compare data hover")
+
+## Baseprobability options
+
+
+
+## Output options
