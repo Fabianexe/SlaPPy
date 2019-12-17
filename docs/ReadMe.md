@@ -28,26 +28,34 @@ slappy
 Then the browser based GUI opens.
 
 First choose a fast5 file by entering the file path in the upper left window.
+
+**new picture**
  
 ![enter path](https://raw.githubusercontent.com/Fabianexe/SlaPPy/master/pictures/path.png "enter the path here")
 
 Then you can select a read out of the fast5 file.
 
+**new picture**
+
 ![select_read](https://raw.githubusercontent.com/Fabianexe/SlaPPy/master/pictures/read_selection.png "select a read")
 
 It is also possible to filter reads using the read-id.
+
+**new picture**
 
 ![filter reads](https://raw.githubusercontent.com/Fabianexe/SlaPPy/master/pictures/filter_reads.png "Filter reads")
 
 Please choose the ONT Guppy basecall group.
 
+**new picture**
+
 ![select_basecall_group](https://raw.githubusercontent.com/Fabianexe/SlaPPy/master/pictures/basecallgroup.png "select basecall group")
 
 ## Displaying options
 
-You can activate stack traces to display the probabilities for the different nucleotides.
+You can activate stack traces under Graph Options to display the probabilities for the different nucleotides. Also it is possible to normalize the value of current to 0.
 
-![stack traces](https://raw.githubusercontent.com/Fabianexe/SlaPPy/master/pictures/stack_traces.png "stack traces")
+![graph_options](https://raw.githubusercontent.com/Fabianexe/SlaPPy/master/pictures/normalize_graph_option.png "graph_options")
 
 There are two different view options: Raw based and Base based. 
 
