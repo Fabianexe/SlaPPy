@@ -4,6 +4,7 @@ from dash_table import DataTable
 from dash.exceptions import PreventUpdate
 from dash.dependencies import Input, Output, State
 from slappy.fast5 import Fast5
+from slappy.search import search
 import dash_bootstrap_components as dbc
 
 from os import scandir
@@ -40,7 +41,7 @@ def layout_menu():
                     filter_action="native",
                 ),
             ],
-            style={'margin-top': '40px'}
+            style={'marginTop': '40px'}
         ),
         html.Div(
             [
@@ -52,13 +53,13 @@ def layout_menu():
                     style={'position': 'absolute', 'right': 0}
                 ),
             ],
-            style={'width': '100%', 'verticalAlign': 'middle', 'margin-top': '40px'}
+            style={'width': '100%', 'verticalAlign': 'middle', 'marginTop': '40px'}
         ),
         
         html.Datalist([], id='list-suggested-inputs'),
         create_search_modal(),
         dbc.Button("Search Sequence", id="open_search",
-                   style={'position': 'absolute', 'right': 0, 'margin-top': '45px'}),
+                   style={'position': 'absolute', 'right': 0, 'marginTop': '45px'}),
         html.Embed(src='/logo.svg',
                    style={'width': '100%', 'verticalAlign': 'middle', 'position': 'absolute', 'bottom': 0},
                    type='image/svg+xml'),
@@ -69,8 +70,31 @@ def layout_menu():
 def create_search_modal():
     return dbc.Modal(
         [
-            dbc.ModalHeader(["Search", dbc.Input(id="input", placeholder="Search a Sequence", type="text")]),
-            dbc.ModalBody("A large modal."),
+            dbc.ModalHeader(
+                dbc.Row(
+                [
+                    dbc.Col(dbc.Input(id="search_input", placeholder="Search a Sequence", type="text"))
+                    ,
+                    dbc.Col(dbc.Button("Search", id="search", className="ml-auto"), width="auto")
+                ]), tag='div', style={'width': '100%'}),
+            dbc.ModalBody(
+                DataTable(
+                    id='search_results',
+                    columns=[{"name": 'Seq', "id": 'seq'}, {"name": 'From', "id": 'from'}, {"name": 'To', "id": 'to'}],
+                    data=[],
+                    style_header={'backgroundColor': 'rgb(30, 30, 30)', 'color': 'white', 'textAlign': 'center'},
+                    style_table={'overflowY': 'scroll'},
+                    fixed_rows={'headers': True, },
+                    style_cell={
+                        'overflow': 'hidden',
+                        'textOverflow': 'ellipsis',
+                        'maxWidth': 0,
+                        'backgroundColor': 'grey',
+                    },
+                    row_selectable='single'
+                ),
+                
+            ),
             dbc.ModalFooter(
                 dbc.Button("Close", id="close_search", className="ml-auto")
             ),
@@ -124,3 +148,21 @@ def menu_callbacks(app):
         if n1 or n2:
             return not is_open
         return is_open
+
+    @app.callback(
+        Output('search_results', 'data'),
+        [Input("search", "n_clicks")],
+        [State('search_input', 'value'), State('reads', 'active_cell'), State('basecalls', 'value'), State('hidden_path', 'value')],
+    )
+    def start_search(_, pattern, read_name_list, basecall_group, path):
+        if path == '' or read_name_list is None:
+            raise PreventUpdate
+        read_name = read_name_list['row_id']
+        fast5_file = Fast5(path)
+        read = fast5_file[read_name]
+        try:
+            seq = read.get_seq(basecall_group)
+            return list(search(pattern, seq))
+            
+        except:
+            raise PreventUpdate

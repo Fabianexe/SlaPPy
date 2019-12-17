@@ -34,6 +34,6 @@ def create_pattern(pattern, dna=False):
 def search(search_string, sequence):
     pattern = create_pattern(search_string)
     for match in re.finditer(pattern, sequence, flags=re.IGNORECASE):
-        yield (match.span()[0], match.span()[0] + len(match.group(1)), match.group(1))
+        yield {'from': match.span()[0], 'to': match.span()[0] + len(match.group(1)), 'seq': match.group(1)}
 
 

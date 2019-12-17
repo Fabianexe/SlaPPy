@@ -106,8 +106,17 @@ logo = \
 </svg>
 """
 
+css = """
+.modal-title {
+    width: 100%;
+}
+"""
 
 def setRouts(app):
     @app.server.route('/logo.svg')
-    def static_file():
+    def static_logo():
         return logo
+    
+    @app.server.route('/custom.css')
+    def static_css():
+        return css, 200, { 'content-type':'text/css'}
