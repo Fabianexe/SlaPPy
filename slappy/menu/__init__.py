@@ -11,6 +11,70 @@ from os import scandir
 
 
 def layout_menu():
+    return [dbc.Container([
+        
+        dbc.Row(
+            [
+                dbc.Col(
+                    dbc.Input(value='', type='text', id='path', list='list-suggested-inputs'),
+                    xs=8,
+                    md=9,
+                ),
+                dbc.Col(
+                    [
+                        dbc.Button('Open', id='open'),
+                        dcc.Input(value='', type='hidden', id='hidden_path'),
+                    ],
+                    xs=3
+                ),
+            
+            ],
+            justify='end',
+            no_gutters=True,
+        ),
+        dbc.Row(
+            [
+                dbc.Col(
+                    DataTable(
+                        id='reads',
+                        columns=[{"name": 'Read', "id": 'name'}],
+                        data=[],
+                        style_header={'backgroundColor': 'rgb(30, 30, 30)', 'color': 'white', 'textAlign': 'center'},
+                        style_table={'overflowY': 'scroll', 'width': '100%'},
+                        fixed_rows={'headers': True, },
+                        style_cell={
+                            'overflow': 'hidden',
+                            'textOverflow': 'ellipsis',
+                            'maxWidth': 0,
+                            'backgroundColor': 'grey',
+                        },
+                        filter_action="native",
+                    ),
+                )
+            ],
+        ),
+        dbc.Row(
+            [
+                dbc.Select(
+                    options=[{'label': '000', 'value': '000'}
+                             ],
+                    id='basecalls',
+                    value='000',
+                
+                ),
+            ],
+        ),
+        dbc.Row(
+            dbc.Button("Search Sequence", id="open_search", ),
+            justify='end',
+        ),
+    ]),
+        html.Datalist([], id='list-suggested-inputs'),
+        create_search_modal(),
+    ]
+
+
+def layout_menu_old():
     return [
         html.Div(
             [
@@ -71,8 +135,7 @@ def create_search_modal():
     return dbc.Modal(
         [
             dbc.ModalHeader(
-                dbc.Row(
-                [
+                dbc.Row([
                     dbc.Col(dbc.Input(id="search_input", placeholder="Search a Sequence", type="text"))
                     ,
                     dbc.Col(dbc.Button("Search", id="search", className="ml-auto"), width="auto")
@@ -93,7 +156,7 @@ def create_search_modal():
                     },
                     row_selectable='single'
                 ),
-                
+            
             ),
             dbc.ModalFooter(
                 dbc.Button("Close", id="close_search", className="ml-auto")
@@ -148,11 +211,12 @@ def menu_callbacks(app):
         if n1 or n2:
             return not is_open
         return is_open
-
+    
     @app.callback(
         Output('search_results', 'data'),
         [Input("search", "n_clicks")],
-        [State('search_input', 'value'), State('reads', 'active_cell'), State('basecalls', 'value'), State('hidden_path', 'value')],
+        [State('search_input', 'value'), State('reads', 'active_cell'), State('basecalls', 'value'),
+         State('hidden_path', 'value')],
     )
     def start_search(_, pattern, read_name_list, basecall_group, path):
         if path == '' or read_name_list is None:
@@ -163,6 +227,6 @@ def menu_callbacks(app):
         try:
             seq = read.get_seq(basecall_group)
             return list(search(pattern, seq))
-            
+        
         except:
             raise PreventUpdate
