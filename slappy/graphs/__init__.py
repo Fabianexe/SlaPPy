@@ -91,7 +91,7 @@ def layout_graphs():
             id='hide_options'
         ),
         html.Embed(src='/logo.svg',
-                   style={'max-width': '20vw', 'max-height': '20vh', 'position': 'absolute', 'right': 0, 'bottom': 0},
+                   style={'maxWidth': '20vw', 'maxHeight': '20vh', 'position': 'absolute', 'right': 0, 'bottom': 0},
                    type='image/svg+xml'),
     ]
 

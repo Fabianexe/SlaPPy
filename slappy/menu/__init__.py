@@ -6,13 +6,12 @@ from dash.dependencies import Input, Output, State
 from slappy.fast5 import Fast5
 from slappy.search import search
 import dash_bootstrap_components as dbc
-
+import visdcc
 from os import scandir
 
 
 def layout_menu():
     return [dbc.Container([
-        
         dbc.Row(
             [
                 dbc.Col(
@@ -69,66 +68,12 @@ def layout_menu():
             justify='end',
         ),
     ]),
+        visdcc.Run_js(id='javascript'),
         html.Datalist([], id='list-suggested-inputs'),
         create_search_modal(),
-    ]
-
-
-def layout_menu_old():
-    return [
-        html.Div(
-            [
-                dbc.Input(value='', type='text', id='path', list='list-suggested-inputs',
-                          style={'width': '70%', 'position': 'absolute', 'left': 0}),
-                dbc.Button('Open', id='open', style={'position': 'absolute', 'right': 0}),
-                dcc.Input(value='', type='hidden', id='hidden_path'),
-            ],
-            style={'width': '100%', 'verticalAlign': 'middle'}
-        ),
-        # html.Button('Open', id='open'),
-        # html.Br(),
-        html.Div(
-            [
-                DataTable(
-                    id='reads',
-                    columns=[{"name": 'Read', "id": 'name'}],
-                    data=[],
-                    style_header={'backgroundColor': 'rgb(30, 30, 30)', 'color': 'white', 'textAlign': 'center'},
-                    style_table={'overflowY': 'scroll'},
-                    fixed_rows={'headers': True, },
-                    style_cell={
-                        'overflow': 'hidden',
-                        'textOverflow': 'ellipsis',
-                        'maxWidth': 0,
-                        'backgroundColor': 'grey',
-                    },
-                    filter_action="native",
-                ),
-            ],
-            style={'marginTop': '40px'}
-        ),
-        html.Div(
-            [
-                dbc.Select(
-                    options=[{'label': '000', 'value': '000'}
-                             ],
-                    id='basecalls',
-                    value='000',
-                    style={'position': 'absolute', 'right': 0}
-                ),
-            ],
-            style={'width': '100%', 'verticalAlign': 'middle', 'marginTop': '40px'}
-        ),
         
-        html.Datalist([], id='list-suggested-inputs'),
-        create_search_modal(),
-        dbc.Button("Search Sequence", id="open_search",
-                   style={'position': 'absolute', 'right': 0, 'marginTop': '45px'}),
-        html.Embed(src='/logo.svg',
-                   style={'width': '100%', 'verticalAlign': 'middle', 'position': 'absolute', 'bottom': 0},
-                   type='image/svg+xml'),
-    
     ]
+
 
 
 def create_search_modal():
@@ -159,7 +104,11 @@ def create_search_modal():
             
             ),
             dbc.ModalFooter(
-                dbc.Button("Close", id="close_search", className="ml-auto")
+                dbc.Row([
+                    dbc.Col(dbc.Button("Close", id="close_search", className="ml-auto")),
+                    dbc.Col(dbc.Button("Apply", id="run_search", className="ml-auto")),
+                ], align='stretch')
+                
             ),
         ],
         id="search_modal",
@@ -167,6 +116,23 @@ def create_search_modal():
         backdrop='static',
         scrollable=True,
     )
+
+
+def create_javascipt(tab, f, t):
+    if tab == 'tab-preview':
+        return f'Plotly.relayout(document.getElementById("graph_preview"), {{"xaxis.range": [{f}, {t}]}})'
+    elif tab == 'tab-raw':
+        pass
+    elif tab == 'tab-base':
+        pass
+    elif tab == 'tab-prob':
+        pass
+    
+        
+    return '''
+    
+    '''
+
 
 
 def menu_callbacks(app):
@@ -227,6 +193,27 @@ def menu_callbacks(app):
         try:
             seq = read.get_seq(basecall_group)
             return list(search(pattern, seq))
+        
+        except:
+            raise PreventUpdate
+    
+    @app.callback(
+        Output('javascript', 'run'),
+        [Input("run_search", "n_clicks")],
+        [State('search_results', 'data'), State('search_results', 'selected_rows'), State('reads', 'active_cell'), State('basecalls', 'value'),
+         State('hidden_path', 'value'), State('tabs', 'value')],
+    )
+    def start_search(_, data, ids, read_name_list, basecall_group, path, tab):
+        if path == '' or read_name_list is None:
+            raise PreventUpdate
+        read_name = read_name_list['row_id']
+        fast5_file = Fast5(path)
+        read = fast5_file[read_name]
+        select = data[ids[0]]
+        try:
+            positions = read.get_basepositions(basecall_group)
+            #TODO reverse umrechnung
+            return create_javascipt(tab, positions[select['from']],  positions[select['to']+1], )
         
         except:
             raise PreventUpdate
