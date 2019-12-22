@@ -5,6 +5,7 @@ from dash.exceptions import PreventUpdate
 from dash.dependencies import Input, Output, State
 from slappy.fast5 import Fast5
 from slappy.search import search
+from slappy.config import search_popovers, popovers
 import dash_bootstrap_components as dbc
 import visdcc
 from os import scandir
@@ -48,7 +49,7 @@ def layout_menu():
                             'backgroundColor': 'grey',
                         },
                         filter_action="native",
-                    ),
+                    ), id='read_col',
                 )
             ],
         ),
@@ -81,6 +82,7 @@ def layout_menu():
         visdcc.Run_js(id='javascript'),
         html.Datalist([], id='list-suggested-inputs'),
         create_search_modal(),
+        *[create_popover(**d) for d in popovers]
     
     ]
 
@@ -123,7 +125,7 @@ def create_search_modal():
                     dbc.Col(dbc.Button("Apply", id="run_search", className="ml-auto"), xs=2),
                 ], justify="between", style={'width': '100%'})
             ),
-            *[create_search_popover(**d) for d in search_popovers]
+            *[create_popover(**d) for d in search_popovers]
         
         ],
         id="search_modal",
@@ -133,36 +135,10 @@ def create_search_modal():
     )
 
 
-search_popovers = [
-    {'content': 'Show/Hide Search Help',
-     'target': 'help_search',
-     'position': 'left'
-     },
-    {'content': ['The searched subsqeuence in ', html.A('one Letter IUPAC nucleotide code', target="_blank",
-                                                        href='https://www.bioinformatics.org/sms/iupac.html')],
-     'target': 'search_input',
-     'position': 'bottom'
-     },
-    {'content': 'Start search',
-     'target': 'search',
-     'position': 'right'
-     },
-    {'content': 'The results of the search. Mark a line at the beginning.',
-     'target': 'search_body',
-     'position': 'left'
-     },
-    {'content': 'Close the search without applying the result (close help first)',
-     'target': 'close_search',
-     'position': 'bottom'
-     },
-    {'content': 'Close the search and apply the result (close help first)',
-     'target': 'run_search',
-     'position': 'bottom'
-     },
-]
 
 
-def create_search_popover(content, target, position):
+
+def create_popover(content, target, position):
     return dbc.Popover(
         dbc.PopoverBody(content),
         id=f"{target}_popover", target=target, placement=position
@@ -276,9 +252,21 @@ def menu_callbacks(app):
         [Input("help_search", "n_clicks")],
         [State("help_search_popover", "is_open")],
     )
-    def toggle_popover(n, is_open):
+    def toggle_search_popover(n, is_open):
         value = False
         if n:
             value = not is_open
         
         return [value] * (len(search_popovers) + 2)
+
+    @app.callback(
+        [Output(f"{d['target']}_popover", "is_open") for d in popovers],
+        [Input("help", "n_clicks")],
+        [State("help_popover", "is_open")],
+    )
+    def toggle_search_popover(n, is_open):
+        value = False
+        if n:
+            value = not is_open
+        
+        return [value] * len(popovers)

@@ -33,27 +33,28 @@ traceid = ['A', 'C', 'G', 'U'] * 2
 def layout_graphs():
     return [
         dcc.Tabs(id="tabs", value='tab-preview', children=[
+            dcc.Tab(disabled=True),
             dcc.Tab(label='Preview', value='tab-preview', children=[
                 dcc.Loading(
                     dcc.Graph(
                         id='graph_preview',
                     )
                 )
-            ]),
+            ], id='preview_head'),
             dcc.Tab(label='Raw based', value='tab-raw', children=[
                 dcc.Loading(
                     dcc.Graph(
                         id='graph_raw',
                     )
                 )
-            ]),
+            ], id='raw_head'),
             dcc.Tab(label='Base based', value='tab-base', children=[
                 dcc.Loading(
                     dcc.Graph(
                         id='graph_base',
                     )
                 )
-            ]),
+            ], id='base_head'),
             dcc.Tab(label='Base probability', value='tab-prob', children=[
                 dcc.Loading(
                     [
@@ -73,7 +74,7 @@ def layout_graphs():
                     id="logo_options",
                     labelStyle={'display': 'inline-block', 'padding': 10}
                 )
-            ]),
+            ], id='prob_head'),
         
         ]),
         html.Div([
@@ -91,7 +92,7 @@ def layout_graphs():
             id='hide_options'
         ),
         html.Embed(src='/logo.svg',
-                   style={'maxWidth': '20vw', 'maxHeight': '20vh', 'position': 'absolute', 'right': 0, 'bottom': 0},
+                   style={'maxWidth': '20%', 'maxHeight': '60px', 'position': 'absolute', 'left': 0, 'top': 0},
                    type='image/svg+xml'),
     ]
 
