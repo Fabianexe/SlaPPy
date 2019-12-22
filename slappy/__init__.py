@@ -56,7 +56,8 @@ def generate_app():
     from slappy import devide_page
     from slappy.statics import setRouts
     import dash_bootstrap_components as dbc
-    app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP, "/custom.css"])
+    app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP, "/custom.css",
+                                                    'https://use.fontawesome.com/releases/v5.12.0/css/all.css'])
 
     app.title = 'Slappy'
     setRouts(app)
