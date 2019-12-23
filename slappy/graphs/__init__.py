@@ -97,6 +97,27 @@ def layout_graphs():
     ]
 
 
+def fetch_read(path, read_name, basecall_group):
+    data = {'raw': None, 'base_positions': None, 'seq': None, 'traces': None, 'error': False, 'moves': None,
+           'start': None, 'steps': None}
+    try:
+        fast5_file = Fast5(path)
+        read = fast5_file[read_name]
+        data['raw'] = read.get_raw_g0()
+        data['base_positions'] = read.get_basepositions(basecall_group)
+        data['seq'] = read.get_seq(basecall_group)
+        data['traces'] = read.get_traces(basecall_group)
+        data['moves'] = read.get_moves(basecall_group)
+        data['start'] = read.get_start(basecall_group)
+        data['steps'] = read.get_step(basecall_group)
+        
+    except KeyError:
+        data['error'] = True
+    
+    return data
+    
+
+
 def graph_callbacks(app):
     @app.callback(
         [Output('graph_preview', 'figure'), Output('tabs', 'value')],
@@ -107,23 +128,20 @@ def graph_callbacks(app):
         if path == '' or read_name_list is None:
             raise PreventUpdate
         read_name = read_name_list['row_id']
-        fast5_file = Fast5(path)
-        read = fast5_file[read_name]
-        raw = read.get_raw_g0()
+        data = fetch_read(path, read_name, basecall_group)
+        raw = data['raw']
         
         fig = go.Figure()
         gernerate_base_legend(fig)
         
         fig.add_trace(generate_raw(raw, list(reversed(range(len(raw))))))
-        try:
-            max_raw = max(raw)
-            base_positions = revers_x(read.get_basepositions(basecall_group), len(raw))
-            seq = read.get_seq(basecall_group)
-            
-            shapes = generate_base_shapes(base_positions, max_raw, seq)
-            fig.update_layout(shapes=shapes)
-        except KeyError:
+        if data['error']:
             fig.add_trace(create_error_trace(raw))
+        else:
+            base_positions = revers_x(data['base_positions'], len(raw))
+            max_raw = max(raw)
+            shapes = generate_base_shapes(base_positions, max_raw, data['seq'])
+            fig.update_layout(shapes=shapes)
         fig["layout"]["yaxis"]["fixedrange"] = True
         return fig, 'tab-preview'
     
@@ -138,9 +156,9 @@ def graph_callbacks(app):
         if path == '' or read_name_list is None:
             raise PreventUpdate
         read_name = read_name_list['row_id']
-        fast5_file = Fast5(path)
-        read = fast5_file[read_name]
-        raw = read.get_raw_g0()
+        data = fetch_read(path, read_name, basecall_group)
+        raw = data['raw']
+        
         number_of_base_values = 5
         trace_stack = False
         if 'trace_stack' in options:
@@ -150,24 +168,28 @@ def graph_callbacks(app):
             normalize = True
         
         figs = (go.Figure(), go.Figure())
-        try:
-            base_positions = read.get_basepositions(basecall_group)
-            seq = '-' + read.get_seq(basecall_group)
-            traces = read.get_traces(basecall_group)
-            start = read.get_start(basecall_group)
-            steps = read.get_step(basecall_group)
-            max_raw = max(raw)
+        if data['error']:
+            for graph in range(2):
+                figs[graph].add_trace(create_error_trace(raw))
+        else:
+            base_positions = data['base_positions']
+            seq = '-' + data['seq']
+            traces = data['traces']
+            start = data['start']
+            steps = data['steps']
             
+            max_raw = max(raw)
+    
             if normalize:
                 base_y_values = [1 / x for x in range(1, number_of_base_values)] + [0]
                 raw = [raw_value / max_raw for raw_value in raw]
             else:
                 base_y_values = [max_raw / x for x in range(1, number_of_base_values)] + [0]
-            
+    
             raw_x = generate_raw_x(base_positions, raw)
             trace_x = generate_trace_x(base_positions, raw, start, steps, traces)
             base_x = generate_base_x(base_positions, number_of_base_values, len(raw))
-            
+    
             for graph in range(2):
                 gernerate_base_legend(figs[graph])
                 for i in (0, 4, 1, 5, 2, 6, 3, 7):
@@ -183,10 +205,6 @@ def graph_callbacks(app):
                         generate_bases(i, base_y_values, seq, base_x[graph][i], number_of_base_values,
                                        len(base_positions) + 1))
                 figs[graph]["layout"]["yaxis"]["fixedrange"] = True
-        except KeyError:
-            for graph in range(2):
-                figs[graph].add_trace(create_error_trace(raw))
-        
         return figs
     
     @app.callback(
@@ -200,14 +218,16 @@ def graph_callbacks(app):
         if path == '' or read_name_list is None:
             raise PreventUpdate
         read_name = read_name_list['row_id']
-        fast5_file = Fast5(path)
-        read = fast5_file[read_name]
+        data = fetch_read(path, read_name, basecall_group)
         
         fig = go.Figure()
-        try:
-            seq = read.get_rev_seq(basecall_group)
-            traces = read.get_traces(basecall_group)
-            moves = read.get_moves(basecall_group)
+        if data['error']:
+            for graph in range(2):
+                fig.add_trace(create_error_trace([0, 0, 0, 0, 0]))
+        else:
+            seq = data['seq']
+            traces = data['traces']
+            moves = data['moves']
             prop = BaseProbertilites(traces, moves)
             if option == 'up':
                 prop.up_to_next_call()
@@ -218,7 +238,7 @@ def graph_callbacks(app):
             else:
                 raise KeyError()
             prop.make_logo()
-            
+    
             fig.update_layout(
                 xaxis=dict(
                     tickmode='array',
@@ -233,7 +253,7 @@ def graph_callbacks(app):
                 ),
                 plot_bgcolor='white',
             )
-            
+    
             shapes = []
             for i, probabilities in enumerate(reversed(list(prop.order_by_probability()))):
                 prob_sum = 0
@@ -242,14 +262,9 @@ def graph_callbacks(app):
                     shapes.append(shape)
                     prob_sum += prob[1]
             fig.update_layout(shapes=shapes)
-            
+    
             fig.add_trace(go.Scatter(x=[0, len(prop)], y=[0, 2], mode='markers', showlegend=False))
             fig["layout"]["yaxis"]["fixedrange"] = True
-        
-        except KeyError:
-            for graph in range(2):
-                fig.add_trace(create_error_trace([0, 0, 0, 0, 0]))
-        
         return fig
     
     @app.callback(
