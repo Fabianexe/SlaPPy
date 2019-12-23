@@ -2,7 +2,7 @@
 logo = \
 """<?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
-<svg width="90%" height="90%" viewBox="0 0 1098 588" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linecap:square;stroke-miterlimit:10;">
+<svg width="100%" height="100%" viewBox="0 0 1098 588" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linecap:square;stroke-miterlimit:10;">
     <g transform="matrix(1,0,0,1,-520,-400)">
         <g transform="matrix(1,0,0,1,0.0210868,-4.32146)">
             <g transform="matrix(0.999766,0,0,0.682362,-42.1866,285.583)">
@@ -106,8 +106,17 @@ logo = \
 </svg>
 """
 
+css = """
+.modal-title {
+    width: 100%;
+}
+"""
 
 def setRouts(app):
     @app.server.route('/logo.svg')
-    def static_file():
+    def static_logo():
         return logo
+    
+    @app.server.route('/custom.css')
+    def static_css():
+        return css, 200, { 'content-type':'text/css'}

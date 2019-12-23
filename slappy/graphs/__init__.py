@@ -33,27 +33,28 @@ traceid = ['A', 'C', 'G', 'U'] * 2
 def layout_graphs():
     return [
         dcc.Tabs(id="tabs", value='tab-preview', children=[
+            dcc.Tab(disabled=True),
             dcc.Tab(label='Preview', value='tab-preview', children=[
                 dcc.Loading(
                     dcc.Graph(
                         id='graph_preview',
                     )
                 )
-            ]),
+            ], id='preview_head'),
             dcc.Tab(label='Raw based', value='tab-raw', children=[
                 dcc.Loading(
                     dcc.Graph(
                         id='graph_raw',
                     )
                 )
-            ]),
+            ], id='raw_head'),
             dcc.Tab(label='Base based', value='tab-base', children=[
                 dcc.Loading(
                     dcc.Graph(
                         id='graph_base',
                     )
                 )
-            ]),
+            ], id='base_head'),
             dcc.Tab(label='Base probability', value='tab-prob', children=[
                 dcc.Loading(
                     [
@@ -62,38 +63,37 @@ def layout_graphs():
                         ),
                     ]
                 ),
-                html.H1('Logo Options'),
-                html.Big(
-                    dcc.RadioItems(
-                        options=[
-                            {'label': 'Up next', 'value': 'up'},
-                            {'label': 'At call', 'value': 'at'},
-                            {'label': 'Around', 'value': 'ar'},
-                        ],
-                        value='up',
-                        id="logo_options",
-                        labelStyle={'display': 'inline-block', 'padding': 10}
-                    )
+                html.H2('Logo Options'),
+                dcc.RadioItems(
+                    options=[
+                        {'label': 'Up next', 'value': 'up'},
+                        {'label': 'At call', 'value': 'at'},
+                        {'label': 'Around', 'value': 'ar'},
+                    ],
+                    value='up',
+                    id="logo_options",
+                    labelStyle={'display': 'inline-block', 'padding': 10}
                 )
-            ]),
+            ], id='prob_head'),
         
         ]),
         html.Div([
-            html.H1('Graph Options'),
-            html.Big(
-                dcc.Checklist(
-                    options=[
-                        {'label': 'Stack Traces', 'value': 'trace_stack'},
-                        {'label': 'Normalize to 1', 'value': 'normalize'},
-                    ],
-                    value=[],
-                    id="graph_options",
-                    labelStyle={'display': 'inline-block', 'padding': 10}
-                )
+            html.H2('Graph Options'),
+            dcc.Checklist(
+                options=[
+                    {'label': 'Stack Traces', 'value': 'trace_stack'},
+                    {'label': 'Normalize to 1', 'value': 'normalize'},
+                ],
+                value=[],
+                id="graph_options",
+                labelStyle={'display': 'inline-block', 'padding': 10}
             )
         ],
             id='hide_options'
         ),
+        html.Embed(src='/logo.svg',
+                   style={'maxWidth': '20%', 'maxHeight': '60px', 'position': 'absolute', 'left': 0, 'top': 0},
+                   type='image/svg+xml'),
     ]
 
 
@@ -172,15 +172,16 @@ def graph_callbacks(app):
                 gernerate_base_legend(figs[graph])
                 for i in (0, 4, 1, 5, 2, 6, 3, 7):
                     if normalize:
-                        y = [0] + list(map(lambda y_value: float(y_value[i]) / 255, traces))
+                        y = [0.] + list(map(lambda y_value: float(y_value[i]) / 255, traces))
                     else:
-                        y = [0] + list(map(lambda y_value: float(y_value[i]) / 255 * max_raw, traces))
+                        y = [0.] + list(map(lambda y_value: float(y_value[i]) / 255 * max_raw, traces))
                     figs[graph].add_trace(generate_traces(i, trace_x[graph], y, trace_stack))
                 figs[graph].add_trace(generate_raw(raw, raw_x[graph]))
                 figs[graph].add_trace(generate_base_legend())
-                for i in range(0, len(base_positions)+1):
+                for i in range(0, len(base_positions) + 1):
                     figs[graph].add_trace(
-                        generate_bases(i, base_y_values, seq, base_x[graph][i], number_of_base_values, len(base_positions)+1))
+                        generate_bases(i, base_y_values, seq, base_x[graph][i], number_of_base_values,
+                                       len(base_positions) + 1))
                 figs[graph]["layout"]["yaxis"]["fixedrange"] = True
         except KeyError:
             for graph in range(2):
@@ -261,14 +262,15 @@ def graph_callbacks(app):
         else:
             return {'display': 'none'}
 
+
 def revers_x(x_coordinates, m):
-    return [m-x for x in x_coordinates] + [0]
+    return [m - x for x in x_coordinates] + [0]
 
 
 def generate_base_x(base_positions, number_of_base_values, len_raw):
-    return [[[len_raw-x] * number_of_base_values for x in base_positions] + [[0]*number_of_base_values],
-            [[len(base_positions)-i] * number_of_base_values for i in range(len(base_positions))] + [[0]*number_of_base_values]
-            ]
+    return [[[len_raw - x] * number_of_base_values for x in base_positions] + [[0] * number_of_base_values],
+            [[len(base_positions) - i] * number_of_base_values for i in range(len(base_positions))] +
+            [[0] * number_of_base_values]]
 
 
 def generate_raw_x(base_positions, raw):
@@ -287,7 +289,7 @@ def generate_raw_x(base_positions, raw):
                 diff = len(raw) - i
         
         val = (i - last) / diff + j
-        raw_to_base.append(len(base_positions)+1 - val)
+        raw_to_base.append(len(base_positions) + 1 - val)
         raw_to_raw.append(len(raw) - i)
     raw_to_base.append(0)
     raw_to_raw.append(0)
@@ -312,7 +314,7 @@ def generate_trace_x(base_positions, raw, start, steps, traces):
         
         val = (i - last) / diff + j
         if i in trace_set:
-            trace_to_base.append(len(base_positions)+1 - val)
+            trace_to_base.append(len(base_positions) + 1 - val)
             trace_to_raw.append(len(raw) - i)
     trace_to_base.append(0)
     trace_to_raw.append(0)
@@ -375,7 +377,8 @@ def generate_base_legend():
 
 def generate_bases(i, base_y_values, seq, x1, number_per_base, len_seq):
     return go.Scatter(x=x1, y=base_y_values, mode='lines+text', showlegend=False,
-                      hovertext=[seq[i] + '<br>' + str(len_seq-i)] * number_per_base, hoverinfo="text", line=dict(color='red'),
+                      hovertext=[seq[i] + '<br>' + str(len_seq - i)] * number_per_base, hoverinfo="text",
+                      line=dict(color='red'),
                       legendgroup="bases",
                       text=[seq[i]] + [''] * (number_per_base - 1),
                       textposition="top center",
