@@ -24,7 +24,7 @@ setup(
             'slappy = slappy.__main__:main'
         ]
     },
-    long_description=read('docs/ReadMe.md'),
+    long_description=read('docs/README.md'),
     long_description_content_type='text/markdown',
     command_options={
         'build_sphinx': {
