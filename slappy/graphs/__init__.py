@@ -98,6 +98,8 @@ def fetch_read(path, read_name, basecall_group):
     try:
         fast5_file = Fast5(path)
         read = fast5_file[read_name]
+        #allready reversed
+        #have to reversed
         data['raw'] = read.get_raw_g0()
         data['base_positions'] = read.get_basepositions(basecall_group)
         data['seq'] = read.get_seq(basecall_group)
