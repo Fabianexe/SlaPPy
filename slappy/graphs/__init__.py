@@ -141,9 +141,65 @@ def graph_callbacks(app):
             fig.update_layout(shapes=shapes)
         fig["layout"]["yaxis"]["fixedrange"] = True
         return fig, 'tab-preview'
+        
+    @app.callback(
+        [Output('graph_raw', 'figure')],
+        [Input('graph_options', 'value'), Input('reads', 'active_cell'), Input('basecalls', 'value')],
+        [State('hidden_path', 'value'), ]
+    )
+    def generate_raw_graph(options, read_name_list, basecall_group, path):
+        if path == '' or read_name_list is None:
+            raise PreventUpdate
+        read_name = read_name_list['row_id']
+        data = fetch_read(path, read_name, basecall_group)
+        raw = data['raw']
+        
+        number_of_base_values = 5
+        trace_stack = False
+        if 'trace_stack' in options:
+            trace_stack = True
+        normalize = False
+        if 'normalize' in options:
+            normalize = True
+        
+        fig = go.Figure()
+        if data['error']:
+            fig.add_trace(create_error_trace(raw))
+        else:
+            base_positions = data['base_positions']
+            seq = data['seq']
+            traces = data['traces']
+            start = data['start']
+            steps = data['steps']
+            
+            max_raw = max(raw)
+    
+            if normalize:
+                base_y_values = [1 / x for x in range(1, number_of_base_values)] + [0]
+                raw = [raw_value / max_raw for raw_value in raw]
+            else:
+                base_y_values = [max_raw / x for x in range(1, number_of_base_values)] + [0]
+    
+            gernerate_base_legend(fig)
+            x = list(range(0,steps*len(traces), steps))
+            for i in (0, 4, 1, 5, 2, 6, 3, 7):
+                if normalize:
+                    y = [float(y_value[i]) / 255 for y_value in traces]
+                else:
+                    y = [float(y_value[i]) / 255 * max_raw for y_value in traces]
+                fig.add_trace(generate_traces(i, x, y, trace_stack))
+            fig.add_trace(generate_raw(raw, list(range(len(raw)))))
+            fig.add_trace(generate_base_legend())
+            for i in range(0, len(base_positions)):
+                fig.add_trace(
+                    generate_bases(i, base_y_values, seq, base_positions, number_of_base_values,
+                                   len(base_positions) + 1))
+            fig["layout"]["yaxis"]["fixedrange"] = True
+        return fig
+    
     
     @app.callback(
-        [Output('graph_raw', 'figure'), Output('graph_base', 'figure')],
+        [Output('graph_base', 'figure')],
         [Input('graph_preview', 'figure'), Input('graph_options', 'value'
                                                  ), ],
         [State('reads', 'active_cell'), State('basecalls', 'value'),
@@ -202,7 +258,7 @@ def graph_callbacks(app):
                         generate_bases(i, base_y_values, seq, base_x[graph][i], number_of_base_values,
                                        len(base_positions) + 1))
                 figs[graph]["layout"]["yaxis"]["fixedrange"] = True
-        return figs
+        return figs[1]
     
     @app.callback(
         Output('graph_prob', 'figure'),
