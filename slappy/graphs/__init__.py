@@ -94,18 +94,19 @@ def layout_graphs():
 
 def fetch_read(path, read_name, basecall_group):
     data = {'raw': None, 'base_positions': None, 'seq': None, 'traces': None, 'error': False, 'moves': None,
-           'start': None, 'steps': None}
+           'start': None, 'steps': None, 'rna':False}
     try:
         fast5_file = Fast5(path)
         read = fast5_file[read_name]
         #allready reversed
-        #have to reversed
-        data['raw'] = read.get_raw_g0()
-        data['base_positions'] = read.get_basepositions(basecall_group)
-        data['seq'] = read.get_seq(basecall_group)
-        data['traces'] = read.get_traces(basecall_group)
-        data['moves'] = read.get_moves(basecall_group)
-        data['start'] = read.get_start(basecall_group)
+        data['raw'] = read.get_raw_g0()[::-1]
+        data['seq'] = read.get_rev_seq(basecall_group) + ['-']
+        if 'u' in data['seq'].lower():
+        	data['rna'] = True
+        data['traces'] = read.get_traces(basecall_group)[::-1]
+        data['moves'] = read.get_moves(basecall_group)[::-1]
+        data['start'] = len(data['raw'])-read.get_start(basecall_group)
+        data['base_positions'] = [0] + [len(data['raw']) - x for x in reversed(read.get_basepositions(basecall_group))]
         data['steps'] = read.get_step(basecall_group)
         
     except KeyError:
@@ -131,13 +132,12 @@ def graph_callbacks(app):
         fig = go.Figure()
         gernerate_base_legend(fig)
         
-        fig.add_trace(generate_raw(raw, list(reversed(range(len(raw))))))
+        fig.add_trace(generate_raw(raw, list(range(len(raw)))))
         if data['error']:
             fig.add_trace(create_error_trace(raw))
         else:
-            base_positions = revers_x(data['base_positions'], len(raw))
             max_raw = max(raw)
-            shapes = generate_base_shapes(base_positions, max_raw, data['seq'])
+            shapes = generate_base_shapes(data['base_positions'], max_raw, data['seq'])
             fig.update_layout(shapes=shapes)
         fig["layout"]["yaxis"]["fixedrange"] = True
         return fig, 'tab-preview'
