@@ -103,7 +103,7 @@ def fetch_read(j_value):
         read = fast5_file[read_name]
         #allready reversed
         data['raw'] = read.get_raw_g0()[::-1]
-        data['seq'] = read.get_rev_seq(basecall_group) + ['-']
+        data['seq'] = read.get_rev_seq(basecall_group) + '-'
         if 'u' in data['seq'].lower():
         	data['rna'] = True
         data['traces'] = read.get_traces(basecall_group)[::-1]
@@ -133,7 +133,6 @@ def graph_callbacks(app):
         value = [path, read_name, basecall_group]
         j_value = json.dumps(value)
         # fetch_read(path, read_name, basecall_group)
-        
         return j_value, 'tab-preview'
     
     @app.callback(
@@ -142,6 +141,8 @@ def graph_callbacks(app):
         []
     )
     def generate_preview_graph(j_value):
+        if j_value=='':
+            raise PreventUpdate
         data = fetch_read(j_value)
         raw = data['raw']
         
@@ -164,6 +165,8 @@ def graph_callbacks(app):
         []
     )
     def generate_raw_graph(j_value, options):
+        if j_value=='':
+            raise PreventUpdate
         data = fetch_read(j_value)
         raw = data['raw']
         
@@ -217,6 +220,8 @@ def graph_callbacks(app):
         []
     )
     def generate_other_graph(j_value, options):
+        if j_value=='':
+            raise PreventUpdate
         data = fetch_read(j_value)
         raw = data['raw']
         
@@ -274,6 +279,8 @@ def graph_callbacks(app):
         []
     )
     def generate_logo(j_value, option):
+        if j_value=='':
+            raise PreventUpdate
         data = fetch_read(j_value)
         
         fig = go.Figure()
