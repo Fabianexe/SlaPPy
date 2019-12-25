@@ -208,8 +208,7 @@ def graph_callbacks(app):
             fig.add_trace(generate_base_legend())
             for i in range(0, len(base_positions)):
                 fig.add_trace(
-                    generate_bases(i, base_y_values, seq, base_positions, number_of_base_values,
-                                   len(base_positions) + 1))
+                    generate_bases(i, base_y_values, seq[i], base_positions[i], number_of_base_values))
             fig["layout"]["yaxis"]["fixedrange"] = True
         return fig
     
@@ -268,8 +267,7 @@ def graph_callbacks(app):
                 figs[graph].add_trace(generate_base_legend())
                 for i in range(0, len(base_positions) + 1):
                     figs[graph].add_trace(
-                        generate_bases(i, base_y_values, seq, base_x[graph][i], number_of_base_values,
-                                       len(base_positions) + 1))
+                        generate_bases(i, base_y_values, seq, base_x[graph][i], number_of_base_values))
                 figs[graph]["layout"]["yaxis"]["fixedrange"] = True
         return figs[1]
     
@@ -454,12 +452,12 @@ def generate_base_legend():
                       )
 
 
-def generate_bases(i, base_y_values, seq, x1, number_per_base, len_seq):
+def generate_bases(i, base_y_values, base, x1, number_per_base):
     return go.Scatter(x=x1, y=base_y_values, mode='lines+text', showlegend=False,
-                      hovertext=[seq[i] + '<br>' + str(len_seq - i)] * number_per_base, hoverinfo="text",
+                      hovertext=[base + '<br>' + str(i)] * number_per_base, hoverinfo="text",
                       line=dict(color='red'),
                       legendgroup="bases",
-                      text=[seq[i]] + [''] * (number_per_base - 1),
+                      text=[base] + [''] * (number_per_base - 1),
                       textposition="top center",
                       textfont=dict(
                           color='red'
