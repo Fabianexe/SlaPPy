@@ -8,6 +8,7 @@ from dash.exceptions import PreventUpdate
 import dash_html_components as html
 
 from slappy.svg import get_nuc
+import json
 
 colors = [
              ('rgba(0,255,0,0.5)', 'rgba(0,255,0,1)'),
@@ -27,6 +28,7 @@ traceid = ['A', 'C', 'G', 'U'] * 2
 
 def layout_graphs():
     return [
+        dcc.Input(value='', type='hidden', id='load_info'),
         dcc.Tabs(id="tabs", value='tab-preview', children=[
             dcc.Tab(disabled=True),
             dcc.Tab(label='Preview', value='tab-preview', children=[
@@ -117,8 +119,24 @@ def fetch_read(path, read_name, basecall_group):
 
 
 def graph_callbacks(app):
+    
     @app.callback(
-        [Output('graph_preview', 'figure'), Output('tabs', 'value')],
+        [Output('load_info', 'value'), Output('tabs', 'value')],
+        [Input('reads', 'active_cell'), Input('basecalls', 'value')],
+        [State('hidden_path', 'value'), ]
+    )
+    def generate_load_info(read_name_list, basecall_group, path):
+        if path == '' or read_name_list is None:
+            raise PreventUpdate
+        read_name = read_name_list['row_id']
+        value = [path, read_name, basecall_group]
+        j_value = json.dumps(value)
+        # fetch_read(path, read_name, basecall_group)
+        
+        return j_value, 'tab-preview'
+    
+    @app.callback(
+        Output('graph_preview', 'figure'),
         [Input('reads', 'active_cell'), Input('basecalls', 'value')],
         [State('hidden_path', 'value'), ]
     )
@@ -140,7 +158,7 @@ def graph_callbacks(app):
             shapes = generate_base_shapes(data['base_positions'], max_raw, data['seq'])
             fig.update_layout(shapes=shapes)
         fig["layout"]["yaxis"]["fixedrange"] = True
-        return fig, 'tab-preview'
+        return fig
         
     @app.callback(
         [Output('graph_raw', 'figure')],
