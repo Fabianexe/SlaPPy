@@ -453,7 +453,7 @@ def generate_base_legend():
 
 
 def generate_bases(i, base_y_values, base, x1, number_per_base):
-    return go.Scatter(x=x1, y=base_y_values, mode='lines+text', showlegend=False,
+    return go.Scatter(x=[x1]*(number_per_base + 1), y=base_y_values, mode='lines+text', showlegend=False,
                       hovertext=[base + '<br>' + str(i)] * number_per_base, hoverinfo="text",
                       line=dict(color='red'),
                       legendgroup="bases",
