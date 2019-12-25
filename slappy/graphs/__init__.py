@@ -94,10 +94,11 @@ def layout_graphs():
     ]
 
 
-def fetch_read(path, read_name, basecall_group):
+def fetch_read(j_value):
     data = {'raw': None, 'base_positions': None, 'seq': None, 'traces': None, 'error': False, 'moves': None,
            'start': None, 'steps': None, 'rna':False}
     try:
+        path, read_name, basecall_group = json.loads(j_value)
         fast5_file = Fast5(path)
         read = fast5_file[read_name]
         #allready reversed
@@ -137,14 +138,11 @@ def graph_callbacks(app):
     
     @app.callback(
         Output('graph_preview', 'figure'),
-        [Input('reads', 'active_cell'), Input('basecalls', 'value')],
-        [State('hidden_path', 'value'), ]
+        [Input('load_info', 'value')],
+        []
     )
-    def generate_preview_graph(read_name_list, basecall_group, path):
-        if path == '' or read_name_list is None:
-            raise PreventUpdate
-        read_name = read_name_list['row_id']
-        data = fetch_read(path, read_name, basecall_group)
+    def generate_preview_graph(j_value):
+        data = fetch_read(j_value)
         raw = data['raw']
         
         fig = go.Figure()
@@ -162,14 +160,11 @@ def graph_callbacks(app):
         
     @app.callback(
         [Output('graph_raw', 'figure')],
-        [Input('graph_options', 'value'), Input('reads', 'active_cell'), Input('basecalls', 'value')],
-        [State('hidden_path', 'value'), ]
+        [Input('load_info', 'value'), Input('graph_options', 'value')],
+        []
     )
-    def generate_raw_graph(options, read_name_list, basecall_group, path):
-        if path == '' or read_name_list is None:
-            raise PreventUpdate
-        read_name = read_name_list['row_id']
-        data = fetch_read(path, read_name, basecall_group)
+    def generate_raw_graph(j_value, options):
+        data = fetch_read(j_value)
         raw = data['raw']
         
         number_of_base_values = 5
@@ -218,16 +213,11 @@ def graph_callbacks(app):
     
     @app.callback(
         [Output('graph_base', 'figure')],
-        [Input('graph_preview', 'figure'), Input('graph_options', 'value'
-                                                 ), ],
-        [State('reads', 'active_cell'), State('basecalls', 'value'),
-         State('hidden_path', 'value'), ]
+        [Input('load_info', 'value'), Input('graph_options', 'value'), ],
+        []
     )
-    def generate_other_graph(_, options, read_name_list, basecall_group, path):
-        if path == '' or read_name_list is None:
-            raise PreventUpdate
-        read_name = read_name_list['row_id']
-        data = fetch_read(path, read_name, basecall_group)
+    def generate_other_graph(j_value, options):
+        data = fetch_read(j_value)
         raw = data['raw']
         
         number_of_base_values = 5
@@ -280,16 +270,11 @@ def graph_callbacks(app):
     
     @app.callback(
         Output('graph_prob', 'figure'),
-        [Input('graph_preview', 'figure'), Input('logo_options', 'value'
-                                                 ), ],
-        [State('reads', 'active_cell'), State('basecalls', 'value'),
-         State('hidden_path', 'value'), ]
+        [Input('load_info', 'value'), Input('logo_options', 'value'), ],
+        []
     )
-    def generate_logo(_, option, read_name_list, basecall_group, path):
-        if path == '' or read_name_list is None:
-            raise PreventUpdate
-        read_name = read_name_list['row_id']
-        data = fetch_read(path, read_name, basecall_group)
+    def generate_logo(j_value, option):
+        data = fetch_read(j_value)
         
         fig = go.Figure()
         if data['error']:
