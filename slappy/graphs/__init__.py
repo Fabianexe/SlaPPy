@@ -160,7 +160,7 @@ def graph_callbacks(app):
         return fig
         
     @app.callback(
-        [Output('graph_raw', 'figure')],
+        Output('graph_raw', 'figure'),
         [Input('load_info', 'value'), Input('graph_options', 'value')],
         []
     )
@@ -215,7 +215,7 @@ def graph_callbacks(app):
     
     
     @app.callback(
-        [Output('graph_base', 'figure')],
+        Output('graph_base', 'figure'),
         [Input('load_info', 'value'), Input('graph_options', 'value'), ],
         []
     )
@@ -319,7 +319,7 @@ def graph_callbacks(app):
             )
     
             shapes = []
-            for i, probabilities in enumerate(reversed(list(prop.order_by_probability()))):
+            for i, probabilities in enumerate(prop.order_by_probability()):
                 prob_sum = 0
                 for prob in probabilities:
                     shape = get_nuc(prob[0], i - 0.5, 1, prob_sum, prob[1], basecolors[prob[0]])
