@@ -294,6 +294,7 @@ def graph_callbacks(app):
             else:
                 raise KeyError()
             prop.make_logo()
+            print(seq)
     
             fig.update_layout(
                 xaxis=dict(
