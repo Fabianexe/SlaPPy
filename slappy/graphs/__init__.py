@@ -197,18 +197,70 @@ def graph_callbacks(app):
                 base_y_values = [max_raw / x for x in range(1, number_of_base_values)] + [0]
     
             gernerate_base_legend(fig)
-            x = list(range(0,steps*len(traces), steps))
+            cor = (len(raw) - start) % 10
+            x = [0] + list(range(cor, steps*len(traces)++9, steps))
             for i in (0, 4, 1, 5, 2, 6, 3, 7):
                 if normalize:
-                    y = [float(y_value[i]) / 255 for y_value in traces]
+                    y = [0] + [float(y_value[i]) / 255 for y_value in traces]
                 else:
-                    y = [float(y_value[i]) / 255 * max_raw for y_value in traces]
+                    y = [0] + [float(y_value[i]) / 255 * max_raw for y_value in traces]
                 fig.add_trace(generate_traces(i, x, y, trace_stack))
             fig.add_trace(generate_raw(raw, list(range(len(raw)))))
             fig.add_trace(generate_base_legend())
             for i in range(0, len(base_positions)):
                 fig.add_trace(
-                    generate_bases(i, base_y_values, seq[i], base_positions[i], number_of_base_values))
+                    s / fabian / repos / FIPY / slappy / __main__.py
+                Running
+                on
+                http: // 0.0
+                .0
+                .0: 8050 /
+                    Debugger
+                PIN: 288 - 406 - 014
+                     * Serving
+                Flask
+                app
+                "slappy"(lazy
+                loading)
+                *Environment: production
+                WARNING: This is a
+                development
+                server.Do
+                not use
+                it in a
+                production
+                deployment.
+                    Use
+                a
+                production
+                WSGI
+                server
+                instead.
+                * Debug
+                mode: on
+                Running
+                on
+                http: // 0.0
+                .0
+                .0: 8050 /
+                    Debugger
+                PIN: 577 - 854 - 847
+                AGACUGGUGAGUUGGAAGCUAAGAGCAUGCGCAUAGCCAGCUCCUUACCCAGGCUGGCAAUCAUGAUUACAUAAAGCAUCAUCCAGAAUCUUGGCUUCUAGAACCAUUCCAUUUGAAGAACAUUCAUUCUAUGAAUACCUUGGUAAUAAUUUUAUACUCACUCAGGAGUUUUGUAGCAUGACUUUUAUGACUAAACUUAUUGUGAAUAAGUUAUUUAGAAAUGUUGAGUUCUGAAUGUUAUUUGUGAUUUGUUCAAAAAUAGUAAUAAAUUGUGUUAUUUG -
+                Running
+                on
+                http: // 0.0
+                .0
+                .0: 8050 /
+                    Debugger
+                PIN: 885 - 952 - 449
+                Running
+                on
+                http: // 0.0
+                .0
+                .0: 8050 /
+                    Debugger
+                PIN: 868 - 540 - 103
+                generate_bases(i, base_y_values, seq[i], base_positions[i], number_of_base_values))
             fig["layout"]["yaxis"]["fixedrange"] = True
         return fig
     
