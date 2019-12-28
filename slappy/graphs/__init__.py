@@ -197,7 +197,7 @@ def graph_callbacks(app):
                 base_y_values = [max_raw / x for x in range(1, number_of_base_values)] + [0]
     
             gernerate_base_legend(fig)
-            cor = (len(raw) - start) % 10
+            cor = start % 10
             x = [0] + list(range(cor, steps*len(traces)++9, steps))
             for i in (0, 4, 1, 5, 2, 6, 3, 7):
                 if normalize:
