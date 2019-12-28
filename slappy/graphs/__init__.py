@@ -208,59 +208,7 @@ def graph_callbacks(app):
             fig.add_trace(generate_raw(raw, list(range(len(raw)))))
             fig.add_trace(generate_base_legend())
             for i in range(0, len(base_positions)):
-                fig.add_trace(
-                    s / fabian / repos / FIPY / slappy / __main__.py
-                Running
-                on
-                http: // 0.0
-                .0
-                .0: 8050 /
-                    Debugger
-                PIN: 288 - 406 - 014
-                     * Serving
-                Flask
-                app
-                "slappy"(lazy
-                loading)
-                *Environment: production
-                WARNING: This is a
-                development
-                server.Do
-                not use
-                it in a
-                production
-                deployment.
-                    Use
-                a
-                production
-                WSGI
-                server
-                instead.
-                * Debug
-                mode: on
-                Running
-                on
-                http: // 0.0
-                .0
-                .0: 8050 /
-                    Debugger
-                PIN: 577 - 854 - 847
-                AGACUGGUGAGUUGGAAGCUAAGAGCAUGCGCAUAGCCAGCUCCUUACCCAGGCUGGCAAUCAUGAUUACAUAAAGCAUCAUCCAGAAUCUUGGCUUCUAGAACCAUUCCAUUUGAAGAACAUUCAUUCUAUGAAUACCUUGGUAAUAAUUUUAUACUCACUCAGGAGUUUUGUAGCAUGACUUUUAUGACUAAACUUAUUGUGAAUAAGUUAUUUAGAAAUGUUGAGUUCUGAAUGUUAUUUGUGAUUUGUUCAAAAAUAGUAAUAAAUUGUGUUAUUUG -
-                Running
-                on
-                http: // 0.0
-                .0
-                .0: 8050 /
-                    Debugger
-                PIN: 885 - 952 - 449
-                Running
-                on
-                http: // 0.0
-                .0
-                .0: 8050 /
-                    Debugger
-                PIN: 868 - 540 - 103
-                generate_bases(i, base_y_values, seq[i], base_positions[i], number_of_base_values))
+                fig.add_trace(generate_bases(i, base_y_values, seq[i], base_positions[i], number_of_base_values))
             fig["layout"]["yaxis"]["fixedrange"] = True
         return fig
     
