@@ -288,7 +288,7 @@ def graph_callbacks(app):
         else:
             seq = data['seq']
             traces = data['traces']
-            moves = [1]+data['moves'][:-1]
+            moves = [1]+list(data['moves'])[:-1]
             print(data['moves'])
             print(moves)
             prop = BaseProbertilites(traces, moves)
