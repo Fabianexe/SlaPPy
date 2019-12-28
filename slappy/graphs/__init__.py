@@ -288,7 +288,7 @@ def graph_callbacks(app):
         else:
             seq = data['seq']
             traces = data['traces']
-            moves = data['moves']
+            moves = [1]+data['moves'][:-1]
             prop = BaseProbertilites(traces, moves)
             if option == 'up':
                 prop.up_to_next_call()
