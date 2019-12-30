@@ -96,31 +96,28 @@ def layout_graphs():
 
 def fetch_read(j_value):
     data = {'raw': None, 'base_positions': None, 'seq': None, 'traces': None, 'error': False, 'moves': None,
-           'start': None, 'steps': None, 'rna':False}
+            'start': None, 'steps': None, 'rna': False}
     try:
         path, read_name, basecall_group = json.loads(j_value)
         fast5_file = Fast5(path)
         read = fast5_file[read_name]
-        #allready reversed
         data['raw'] = read.get_raw_g0()[::-1]
         data['seq'] = read.get_rev_seq(basecall_group) + '-'
         if 'u' in data['seq'].lower():
-        	data['rna'] = True
+            data['rna'] = True
         data['traces'] = read.get_traces(basecall_group)[::-1]
         data['moves'] = read.get_moves(basecall_group)[::-1]
-        data['start'] = len(data['raw'])-read.get_start(basecall_group)
+        data['start'] = len(data['raw']) - read.get_start(basecall_group)
         data['base_positions'] = [0] + [len(data['raw']) - x for x in reversed(read.get_basepositions(basecall_group))]
         data['steps'] = read.get_step(basecall_group)
-        
+    
     except KeyError:
         data['error'] = True
     
     return data
-    
 
 
 def graph_callbacks(app):
-    
     @app.callback(
         [Output('load_info', 'value'), Output('tabs', 'value')],
         [Input('reads', 'active_cell'), Input('basecalls', 'value')],
@@ -141,7 +138,7 @@ def graph_callbacks(app):
         []
     )
     def generate_preview_graph(j_value):
-        if j_value=='':
+        if j_value == '':
             raise PreventUpdate
         data = fetch_read(j_value)
         raw = data['raw']
@@ -158,14 +155,14 @@ def graph_callbacks(app):
             fig.update_layout(shapes=shapes)
         fig["layout"]["yaxis"]["fixedrange"] = True
         return fig
-        
+    
     @app.callback(
         Output('graph_raw', 'figure'),
         [Input('load_info', 'value'), Input('graph_options', 'value')],
         []
     )
     def generate_raw_graph(j_value, options):
-        if j_value=='':
+        if j_value == '':
             raise PreventUpdate
         data = fetch_read(j_value)
         raw = data['raw']
@@ -189,21 +186,21 @@ def graph_callbacks(app):
             steps = data['steps']
             
             max_raw = max(raw)
-    
+            
             if normalize:
                 base_y_values = [1 / x for x in range(1, number_of_base_values)] + [0]
                 raw = [raw_value / max_raw for raw_value in raw]
             else:
                 base_y_values = [max_raw / x for x in range(1, number_of_base_values)] + [0]
-    
+            
             gernerate_base_legend(fig)
             cor = start % 10
-            x = [0] + list(range(cor, steps*len(traces)++9, steps))
+            x = [0] + list(range(cor, steps * len(traces) + +9, steps))
             for i in (0, 4, 1, 5, 2, 6, 3, 7):
                 if normalize:
-                    y = [0] + [float(y_value[i]) / 255 for y_value in traces]
+                    y = [0.] + [float(y_value[i]) / 255 for y_value in traces]
                 else:
-                    y = [0] + [float(y_value[i]) / 255 * max_raw for y_value in traces]
+                    y = [0.] + [float(y_value[i]) / 255 * max_raw for y_value in traces]
                 fig.add_trace(generate_traces(i, x, y, trace_stack))
             fig.add_trace(generate_raw(raw, list(range(len(raw)))))
             fig.add_trace(generate_base_legend())
@@ -212,14 +209,13 @@ def graph_callbacks(app):
             fig["layout"]["yaxis"]["fixedrange"] = True
         return fig
     
-    
     @app.callback(
         Output('graph_base', 'figure'),
         [Input('load_info', 'value'), Input('graph_options', 'value'), ],
         []
     )
     def generate_other_graph(j_value, options):
-        if j_value=='':
+        if j_value == '':
             raise PreventUpdate
         data = fetch_read(j_value)
         raw = data['raw']
@@ -244,17 +240,17 @@ def graph_callbacks(app):
             steps = data['steps']
             
             max_raw = max(raw)
-    
+            
             if normalize:
                 base_y_values = [1 / x for x in range(1, number_of_base_values)] + [0]
                 raw = [raw_value / max_raw for raw_value in raw]
             else:
                 base_y_values = [max_raw / x for x in range(1, number_of_base_values)] + [0]
-    
+            
             raw_x = generate_raw_x(base_positions, raw)
             trace_x = generate_trace_x(base_positions, raw, start, steps, traces)
             base_x = generate_base_x(base_positions, number_of_base_values, len(raw))
-    
+            
             for graph in range(2):
                 gernerate_base_legend(figs[graph])
                 for i in (0, 4, 1, 5, 2, 6, 3, 7):
@@ -277,7 +273,7 @@ def graph_callbacks(app):
         []
     )
     def generate_logo(j_value, option):
-        if j_value=='':
+        if j_value == '':
             raise PreventUpdate
         data = fetch_read(j_value)
         
@@ -288,7 +284,7 @@ def graph_callbacks(app):
         else:
             seq = data['seq']
             traces = data['traces']
-            moves = [1]+list(data['moves'])[:-1]
+            moves = [1] + list(data['moves'])[:-1]
             prop = BaseProbertilites(traces, moves)
             if option == 'up':
                 prop.up_to_next_call()
@@ -300,7 +296,7 @@ def graph_callbacks(app):
                 raise KeyError()
             prop.make_logo()
             print(seq)
-    
+            
             fig.update_layout(
                 xaxis=dict(
                     tickmode='array',
@@ -315,7 +311,7 @@ def graph_callbacks(app):
                 ),
                 plot_bgcolor='white',
             )
-    
+            
             shapes = []
             for i, probabilities in enumerate(prop.order_by_probability()):
                 prob_sum = 0
@@ -324,7 +320,7 @@ def graph_callbacks(app):
                     shapes.append(shape)
                     prob_sum += prob[1]
             fig.update_layout(shapes=shapes)
-    
+            
             fig.add_trace(go.Scatter(x=[0, len(prop)], y=[0, 2], mode='markers', showlegend=False))
             fig["layout"]["yaxis"]["fixedrange"] = True
         return fig
@@ -453,7 +449,7 @@ def generate_base_legend():
 
 
 def generate_bases(i, base_y_values, base, x1, number_per_base):
-    return go.Scatter(x=[x1]*(number_per_base + 1), y=base_y_values, mode='lines+text', showlegend=False,
+    return go.Scatter(x=[x1] * (number_per_base + 1), y=base_y_values, mode='lines+text', showlegend=False,
                       hovertext=[base + '<br>' + str(i)] * number_per_base, hoverinfo="text",
                       line=dict(color='red'),
                       legendgroup="bases",
