@@ -195,7 +195,7 @@ def graph_callbacks(app):
             
             gernerate_base_legend(fig)
             cor = start % 10
-            x = [0] + list(range(cor, steps * len(traces) + +9, steps))
+            x = [0] + list(range(cor, steps * len(traces) + 9, steps))
             for i in (0, 4, 1, 5, 2, 6, 3, 7):
                 if normalize:
                     y = [0.] + [float(y_value[i]) / 255 for y_value in traces]
@@ -214,7 +214,7 @@ def graph_callbacks(app):
         [Input('load_info', 'value'), Input('graph_options', 'value'), ],
         []
     )
-    def generate_other_graph(j_value, options):
+    def generate_base_graph(j_value, options):
         if j_value == '':
             raise PreventUpdate
         data = fetch_read(j_value)
@@ -228,13 +228,12 @@ def graph_callbacks(app):
         if 'normalize' in options:
             normalize = True
         
-        figs = (go.Figure(), go.Figure())
+        fig = go.Figure()
         if data['error']:
-            for graph in range(2):
-                figs[graph].add_trace(create_error_trace(raw))
+            fig.add_trace(create_error_trace(raw))
         else:
             base_positions = data['base_positions']
-            seq = '-' + data['seq']
+            seq = data['seq']
             traces = data['traces']
             start = data['start']
             steps = data['steps']
@@ -249,23 +248,22 @@ def graph_callbacks(app):
             
             raw_x = generate_raw_x(base_positions, raw)
             trace_x = generate_trace_x(base_positions, raw, start, steps, traces)
-            base_x = generate_base_x(base_positions, number_of_base_values, len(raw))
-            
-            for graph in range(2):
-                gernerate_base_legend(figs[graph])
-                for i in (0, 4, 1, 5, 2, 6, 3, 7):
-                    if normalize:
-                        y = [0.] + list(map(lambda y_value: float(y_value[i]) / 255, traces))
-                    else:
-                        y = [0.] + list(map(lambda y_value: float(y_value[i]) / 255 * max_raw, traces))
-                    figs[graph].add_trace(generate_traces(i, trace_x[graph], y, trace_stack))
-                figs[graph].add_trace(generate_raw(raw, raw_x[graph]))
-                figs[graph].add_trace(generate_base_legend())
-                for i in range(0, len(base_positions) + 1):
-                    figs[graph].add_trace(
-                        generate_bases(i, base_y_values, seq, base_x[graph][i], number_of_base_values))
-                figs[graph]["layout"]["yaxis"]["fixedrange"] = True
-        return figs[1]
+            base_x = list(range(len(base_positions)))
+
+            gernerate_base_legend(fig)
+            for i in (0, 4, 1, 5, 2, 6, 3, 7):
+                if normalize:
+                    y = [0.] + list(map(lambda y_value: float(y_value[i]) / 255, traces))
+                else:
+                    y = [0.] + list(map(lambda y_value: float(y_value[i]) / 255 * max_raw, traces))
+                fig.add_trace(generate_traces(i, trace_x, y, trace_stack))
+            fig.add_trace(generate_raw(raw, raw_x))
+            fig.add_trace(generate_base_legend())
+            for i in range(len(base_positions)):
+                fig.add_trace(
+                    generate_bases(i, base_y_values, seq[i], base_x[i], number_of_base_values))
+            fig["layout"]["yaxis"]["fixedrange"] = True
+        return fig
     
     @app.callback(
         Output('graph_prob', 'figure'),
@@ -295,7 +293,6 @@ def graph_callbacks(app):
             else:
                 raise KeyError()
             prop.make_logo()
-            print(seq)
             
             fig.update_layout(
                 xaxis=dict(
@@ -336,20 +333,9 @@ def graph_callbacks(app):
             return {'display': 'none'}
 
 
-def revers_x(x_coordinates, m):
-    return [m - x for x in x_coordinates] + [0]
-
-
-def generate_base_x(base_positions, number_of_base_values, len_raw):
-    return [[[len_raw - x] * number_of_base_values for x in base_positions] + [[0] * number_of_base_values],
-            [[len(base_positions) - i] * number_of_base_values for i in range(len(base_positions))] +
-            [[0] * number_of_base_values]]
-
-
 def generate_raw_x(base_positions, raw):
     last = 0
     raw_to_base = []
-    raw_to_raw = []
     j = 0
     diff = base_positions[j]
     for i in range(len(raw)):
@@ -361,22 +347,19 @@ def generate_raw_x(base_positions, raw):
             else:
                 diff = len(raw) - i
         
-        val = (i - last) / diff + j
-        raw_to_base.append(len(base_positions) + 1 - val)
-        raw_to_raw.append(len(raw) - i)
-    raw_to_base.append(0)
-    raw_to_raw.append(0)
-    return raw_to_raw, raw_to_base
+        val = (i - last) / diff + j-1
+        raw_to_base.append(val)
+    return raw_to_base
 
 
 def generate_trace_x(base_positions, raw, start, steps, traces):
-    trace_set = set(range(start, start + steps * len(traces), 10))
+    cor = start % 10
+    x = [0] + list(range(cor, steps * len(traces) + 9, steps))
     last = 0
     trace_to_base = []
-    trace_to_raw = []
     j = 0
     diff = base_positions[j]
-    for i in range(len(raw)):
+    for i in x:
         if j < len(base_positions) and i == base_positions[j]:
             last = i
             j += 1
@@ -384,14 +367,10 @@ def generate_trace_x(base_positions, raw, start, steps, traces):
                 diff = base_positions[j] - i
             else:
                 diff = len(raw) - i
-        
-        val = (i - last) / diff + j
-        if i in trace_set:
-            trace_to_base.append(len(base_positions) + 1 - val)
-            trace_to_raw.append(len(raw) - i)
-    trace_to_base.append(0)
-    trace_to_raw.append(0)
-    return trace_to_raw, trace_to_base
+    
+        val = (i - last) / diff + j-1
+        trace_to_base.append(val)
+    return trace_to_base
 
 
 def gernerate_base_legend(fig):
