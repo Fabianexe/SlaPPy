@@ -9,6 +9,7 @@ import dash_html_components as html
 
 from slappy.svg import get_nuc
 import json
+import itertools
 
 colors = [
              ('rgba(0,255,0,0.5)', 'rgba(0,255,0,1)'),
@@ -330,22 +331,16 @@ def graph_callbacks(app):
 
 
 def generate_raw_x(base_positions, raw):
-    last = 0
-    raw_to_base = []
-    j = 0
-    diff = base_positions[j]
-    for i in range(len(raw)):
-        if j < len(base_positions) and i == base_positions[j]:
-            last = i
-            j += 1
-            if j < len(base_positions):
-                diff = base_positions[j] - i
-            else:
-                diff = len(raw) - i
-        
-        val = (i - last) / diff + j - 1
-        raw_to_base.append(val)
-    return raw_to_base
+    positions = [*base_positions, len(raw) + 1]
+    return [*itertools.chain(
+            *(
+                itertools.islice(
+                    itertools.count(i - 1, 1 / (positions[i] - positions[i - 1])),
+                    positions[i] - positions[i - 1]
+                )
+                for i in range(1, len(positions)))
+            )
+            ]
 
 
 def generate_trace_x(base_positions, raw, start, steps, traces):
@@ -354,16 +349,13 @@ def generate_trace_x(base_positions, raw, start, steps, traces):
     last = 0
     trace_to_base = []
     j = 0
-    diff = base_positions[j]
+    positions = [*base_positions, len(raw) + 1]
+    diff = positions[j]
     for i in x:
-        if j < len(base_positions) and i == base_positions[j]:
+        if i == positions[j]:
             last = i
             j += 1
-            if j < len(base_positions):
-                diff = base_positions[j] - i
-            else:
-                diff = len(raw) - i
-        
+            diff = positions[j] - i
         val = (i - last) / diff + j - 1
         trace_to_base.append(val)
     return trace_to_base
