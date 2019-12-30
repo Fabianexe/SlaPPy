@@ -109,9 +109,9 @@ def fetch_read(j_value):
         data['traces'] = read.get_traces(basecall_group)[::-1]
         data['moves'] = read.get_moves(basecall_group)[::-1]
         data['start'] = len(data['raw']) - read.get_start(basecall_group)
-        data['base_positions'] = [0, *[len(data['raw']) - x for x in reversed(read.get_basepositions(basecall_group))]]
         data['steps'] = read.get_step(basecall_group)
-    
+        data['base_positions'] = [data['start'] % data['steps'],
+                                  *[len(data['raw']) - x for x in reversed(read.get_basepositions(basecall_group))]]
     except KeyError:
         data['error'] = True
     
@@ -189,19 +189,19 @@ def graph_callbacks(app):
             max_raw = max(raw)
             
             if normalize:
-                base_y_values = [1 / x for x in range(1, number_of_base_values)] + [0]
+                base_y_values = [*[1 / x for x in range(1, number_of_base_values)], 0]
                 raw = [raw_value / max_raw for raw_value in raw]
             else:
-                base_y_values = [max_raw / x for x in range(1, number_of_base_values)] + [0]
+                base_y_values = [*[max_raw / x for x in range(1, number_of_base_values)], 0]
             
             gernerate_base_legend(fig)
-            cor = start % 10
-            x = [0, *range(cor, steps * len(traces) + 9, steps)]
+            cor = start % steps
+            x = [*range(cor, steps * len(traces) + cor + 1, steps)]
             for i in (0, 4, 1, 5, 2, 6, 3, 7):
                 if normalize:
-                    y = [0, *[float(y_value[i]) / 255 for y_value in traces]]
+                    y = [*[float(y_value[i]) / 255 for y_value in traces], 0]
                 else:
-                    y = [0, *[float(y_value[i]) / 255 * max_raw for y_value in traces]]
+                    y = [*[float(y_value[i]) / 255 * max_raw for y_value in traces], 0]
                 fig.add_trace(generate_traces(i, x, y, trace_stack))
             fig.add_trace(generate_raw(raw, [*range(len(raw))]))
             fig.add_trace(generate_base_legend())
@@ -235,7 +235,6 @@ def graph_callbacks(app):
             base_positions = data['base_positions']
             seq = data['seq']
             traces = data['traces']
-            start = data['start']
             steps = data['steps']
             
             max_raw = max(raw)
@@ -247,14 +246,14 @@ def graph_callbacks(app):
                 base_y_values = [*[max_raw / x for x in range(1, number_of_base_values)], 0]
             
             raw_x = generate_raw_x(base_positions, raw)
-            trace_x = generate_trace_x(base_positions, raw, start, steps, traces)
+            trace_x = generate_trace_x(base_positions, steps)
             
             gernerate_base_legend(fig)
             for i in (0, 4, 1, 5, 2, 6, 3, 7):
                 if normalize:
-                    y = [0, *map(lambda y_value: float(y_value[i]) / 255, traces)]
+                    y = [*map(lambda y_value: float(y_value[i]) / 255, traces), 0]
                 else:
-                    y = [0, *map(lambda y_value: float(y_value[i]) / 255 * max_raw, traces)]
+                    y = [*map(lambda y_value: float(y_value[i]) / 255 * max_raw, traces), 0]
                 fig.add_trace(generate_traces(i, trace_x, y, trace_stack))
             fig.add_trace(generate_raw(raw, raw_x))
             fig.add_trace(generate_base_legend())
@@ -274,8 +273,7 @@ def graph_callbacks(app):
         
         fig = go.Figure()
         if data['error']:
-            for graph in range(2):
-                fig.add_trace(create_error_trace([0, 0, 0, 0, 0]))
+            fig.add_trace(create_error_trace([0, 0, 0, 0, 0]))
         else:
             seq = data['seq']
             traces = data['traces']
@@ -333,32 +331,27 @@ def graph_callbacks(app):
 def generate_raw_x(base_positions, raw):
     positions = [*base_positions, len(raw) + 1]
     return [*itertools.chain(
-            *(
-                itertools.islice(
-                    itertools.count(i - 1, 1 / (positions[i] - positions[i - 1])),
-                    positions[i] - positions[i - 1]
-                )
-                for i in range(1, len(positions)))
+        *(
+            itertools.islice(
+                itertools.count(i - 1, 1 / (positions[i] - positions[i - 1])),
+                positions[i] - positions[i - 1]
             )
+            for i in range(1, len(positions)))
+    )
             ]
 
 
-def generate_trace_x(base_positions, raw, start, steps, traces):
-    cor = start % 10
-    x = [0, *range(cor, steps * len(traces) + 9, steps)]
-    last = 0
-    trace_to_base = []
-    j = 0
-    positions = [*base_positions, len(raw) + 1]
-    diff = positions[j]
-    for i in x:
-        if i == positions[j]:
-            last = i
-            j += 1
-            diff = positions[j] - i
-        val = (i - last) / diff + j - 1
-        trace_to_base.append(val)
-    return trace_to_base
+def generate_trace_x(base_positions, steps):
+    return [*itertools.chain(
+        *(
+            itertools.islice(
+                itertools.count(i - 1, steps / (base_positions[i] - base_positions[i - 1])),
+                (base_positions[i] - base_positions[i - 1]) // steps
+            )
+            for i in range(1, len(base_positions)))
+    ),
+            len(base_positions) - 1
+            ]
 
 
 def gernerate_base_legend(fig):
