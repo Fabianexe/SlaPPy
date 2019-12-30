@@ -108,7 +108,7 @@ def fetch_read(j_value):
         data['traces'] = read.get_traces(basecall_group)[::-1]
         data['moves'] = read.get_moves(basecall_group)[::-1]
         data['start'] = len(data['raw']) - read.get_start(basecall_group)
-        data['base_positions'] = [0] + [len(data['raw']) - x for x in reversed(read.get_basepositions(basecall_group))]
+        data['base_positions'] = [0, *[len(data['raw']) - x for x in reversed(read.get_basepositions(basecall_group))]]
         data['steps'] = read.get_step(basecall_group)
     
     except KeyError:
@@ -146,7 +146,7 @@ def graph_callbacks(app):
         fig = go.Figure()
         gernerate_base_legend(fig)
         
-        fig.add_trace(generate_raw(raw, list(range(len(raw)))))
+        fig.add_trace(generate_raw(raw, [*range(len(raw))]))
         if data['error']:
             fig.add_trace(create_error_trace(raw))
         else:
@@ -195,17 +195,16 @@ def graph_callbacks(app):
             
             gernerate_base_legend(fig)
             cor = start % 10
-            x = [0] + list(range(cor, steps * len(traces) + 9, steps))
+            x = [0, *range(cor, steps * len(traces) + 9, steps)]
             for i in (0, 4, 1, 5, 2, 6, 3, 7):
                 if normalize:
-                    y = [0.] + [float(y_value[i]) / 255 for y_value in traces]
+                    y = [0, *[float(y_value[i]) / 255 for y_value in traces]]
                 else:
-                    y = [0.] + [float(y_value[i]) / 255 * max_raw for y_value in traces]
+                    y = [0, *[float(y_value[i]) / 255 * max_raw for y_value in traces]]
                 fig.add_trace(generate_traces(i, x, y, trace_stack))
-            fig.add_trace(generate_raw(raw, list(range(len(raw)))))
+            fig.add_trace(generate_raw(raw, [*range(len(raw))]))
             fig.add_trace(generate_base_legend())
-            for i in range(0, len(base_positions)):
-                fig.add_trace(generate_bases(i, base_y_values, seq[i], base_positions[i], number_of_base_values))
+            fig.add_traces(generate_bases(base_positions, base_y_values, seq, number_of_base_values))
             fig["layout"]["yaxis"]["fixedrange"] = True
         return fig
     
@@ -241,27 +240,24 @@ def graph_callbacks(app):
             max_raw = max(raw)
             
             if normalize:
-                base_y_values = [1 / x for x in range(1, number_of_base_values)] + [0]
+                base_y_values = [*[1 / x for x in range(1, number_of_base_values)], 0]
                 raw = [raw_value / max_raw for raw_value in raw]
             else:
-                base_y_values = [max_raw / x for x in range(1, number_of_base_values)] + [0]
+                base_y_values = [*[max_raw / x for x in range(1, number_of_base_values)], 0]
             
             raw_x = generate_raw_x(base_positions, raw)
             trace_x = generate_trace_x(base_positions, raw, start, steps, traces)
-            base_x = list(range(len(base_positions)))
-
+            
             gernerate_base_legend(fig)
             for i in (0, 4, 1, 5, 2, 6, 3, 7):
                 if normalize:
-                    y = [0.] + list(map(lambda y_value: float(y_value[i]) / 255, traces))
+                    y = [0, *map(lambda y_value: float(y_value[i]) / 255, traces)]
                 else:
-                    y = [0.] + list(map(lambda y_value: float(y_value[i]) / 255 * max_raw, traces))
+                    y = [0, *map(lambda y_value: float(y_value[i]) / 255 * max_raw, traces)]
                 fig.add_trace(generate_traces(i, trace_x, y, trace_stack))
             fig.add_trace(generate_raw(raw, raw_x))
             fig.add_trace(generate_base_legend())
-            for i in range(len(base_positions)):
-                fig.add_trace(
-                    generate_bases(i, base_y_values, seq[i], base_x[i], number_of_base_values))
+            fig.add_traces(generate_bases([*range(len(base_positions))], base_y_values, seq, number_of_base_values))
             fig["layout"]["yaxis"]["fixedrange"] = True
         return fig
     
@@ -282,7 +278,7 @@ def graph_callbacks(app):
         else:
             seq = data['seq']
             traces = data['traces']
-            moves = [1] + list(data['moves'])[:-1]
+            moves = [1, *data['moves'][:-1]]
             prop = BaseProbertilites(traces, moves)
             if option == 'up':
                 prop.up_to_next_call()
@@ -297,8 +293,8 @@ def graph_callbacks(app):
             fig.update_layout(
                 xaxis=dict(
                     tickmode='array',
-                    tickvals=list(range(len(seq))),
-                    ticktext=[x + '<br>' + str(i) for i, x in enumerate(seq)],
+                    tickvals=[*range(len(seq))],
+                    ticktext=[f'{x}<br>{i}' for i, x in enumerate(seq)],
                     showgrid=False,
                     tickangle=0,
                     zeroline=False,
@@ -347,14 +343,14 @@ def generate_raw_x(base_positions, raw):
             else:
                 diff = len(raw) - i
         
-        val = (i - last) / diff + j-1
+        val = (i - last) / diff + j - 1
         raw_to_base.append(val)
     return raw_to_base
 
 
 def generate_trace_x(base_positions, raw, start, steps, traces):
     cor = start % 10
-    x = [0] + list(range(cor, steps * len(traces) + 9, steps))
+    x = [0, *range(cor, steps * len(traces) + 9, steps)]
     last = 0
     trace_to_base = []
     j = 0
@@ -367,8 +363,8 @@ def generate_trace_x(base_positions, raw, start, steps, traces):
                 diff = base_positions[j] - i
             else:
                 diff = len(raw) - i
-    
-        val = (i - last) / diff + j-1
+        
+        val = (i - last) / diff + j - 1
         trace_to_base.append(val)
     return trace_to_base
 
@@ -427,18 +423,22 @@ def generate_base_legend():
                       )
 
 
-def generate_bases(i, base_y_values, base, x1, number_per_base):
-    return go.Scatter(x=[x1] * (number_per_base + 1), y=base_y_values, mode='lines+text', showlegend=False,
-                      hovertext=[base + '<br>' + str(i)] * number_per_base, hoverinfo="text",
-                      line=dict(color='red'),
-                      legendgroup="bases",
-                      text=[base] + [''] * (number_per_base - 1),
-                      textposition="top center",
-                      textfont=dict(
-                          color='red'
-                      ),
-    
-                      )
+def generate_bases(base_positions, base_y_values, seq, number_per_base):
+    scatter_list = []
+    for i in range(0, len(base_positions)):
+        scatter_list.append(
+            go.Scatter(x=[base_positions[i]] * (number_per_base + 1), y=base_y_values, mode='lines+text',
+                       showlegend=False,
+                       hovertext=[f'{seq[i]}<br>{i}'] * number_per_base, hoverinfo="text",
+                       line=dict(color='red'),
+                       legendgroup="bases",
+                       text=[seq[i], *[''] * (number_per_base - 1)],
+                       textposition="top center",
+                       textfont={'color': 'red'},
+                       )
+        
+        )
+    return scatter_list
 
 
 def generate_traces(i, trace_to_raw, y, trace_stack):
