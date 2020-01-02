@@ -55,8 +55,6 @@ Please choose the ONT Guppy basecall group.
 
 You can activate stack traces under Graph Options to display the probabilities for the different nucleotides. Also it is possible to normalize the value of current to 0.
 
-**richtigen Pfad einfügen**
-
 ![graph_options](https://raw.githubusercontent.com/Fabianexe/SlaPPy/master/pictures/normalize_graph_option.png "graph_options")
 
 
@@ -64,7 +62,6 @@ There are two different view options: Raw based and Base based.
 
 In the Raw based mode, the Squiggle can be seen unchanged. 
 
-**richtigen Pfad angeben**
 
 ![Raw based mode](https://raw.githubusercontent.com/Fabianexe/SlaPPy/master/pictures/raw_based.png "raw based")
 
