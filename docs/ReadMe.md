@@ -28,10 +28,8 @@ slappy
 Then the browser based GUI opens.
 
 First choose a fast5 file by entering the file path in the upper left window.
-
-**new picture**
  
-![enter path](https://raw.githubusercontent.com/Fabianexe/SlaPPy/master/pictures/path.png "enter the path here")
+![enter path](https://raw.githubusercontent.com/Fabianexe/SlaPPy/master/pictures/enter_path.png "enter the path here")
 
 Then you can select a read out of the fast5 file.
 
