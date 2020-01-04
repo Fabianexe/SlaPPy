@@ -7,6 +7,8 @@ from slappy.fast5 import Fast5
 from dash.exceptions import PreventUpdate
 import dash_html_components as html
 
+from flask_caching import Cache
+
 from slappy.svg import get_nuc
 import json
 import itertools
@@ -30,6 +32,7 @@ traceid = ['A', 'C', 'G', 'U'] * 2
 def layout_graphs():
     return [
         dcc.Input(value='', type='hidden', id='load_info'),
+        dcc.Input(value='', type='hidden', id='start_info'),
         dcc.Tabs(id="tabs", value='tab-preview', children=[
             dcc.Tab(disabled=True),
             dcc.Tab(label='Preview', value='tab-preview', children=[
@@ -95,30 +98,33 @@ def layout_graphs():
     ]
 
 
-def fetch_read(j_value):
-    data = {'raw': None, 'base_positions': None, 'seq': None, 'traces': None, 'error': False, 'moves': None,
-            'start': None, 'steps': None, 'rna': False}
-    try:
-        path, read_name, basecall_group = json.loads(j_value)
-        fast5_file = Fast5(path)
-        read = fast5_file[read_name]
-        data['raw'] = read.get_raw_g0()[::-1]
-        data['seq'] = read.get_rev_seq(basecall_group) + '-'
-        if 'u' in data['seq'].lower():
-            data['rna'] = True
-        data['traces'] = read.get_traces(basecall_group)[::-1]
-        data['moves'] = read.get_moves(basecall_group)[::-1]
-        data['start'] = len(data['raw']) - read.get_start(basecall_group)
-        data['steps'] = read.get_step(basecall_group)
-        data['base_positions'] = [data['start'] % data['steps'],
-                                  *[len(data['raw']) - x for x in reversed(read.get_basepositions(basecall_group))]]
-    except KeyError:
-        data['error'] = True
-    
-    return data
-
-
 def graph_callbacks(app):
+    cache = Cache()
+    cache.init_app(app.server, config={"CACHE_TYPE": "simple"})
+    
+    @cache.memoize()
+    def fetch_read(j_value):
+        data = {'raw': None, 'base_positions': None, 'seq': None, 'traces': None, 'error': False, 'moves': None,
+                'start': None, 'steps': None, 'rna': False}
+        try:
+            path, read_name, basecall_group = json.loads(j_value)
+            fast5_file = Fast5(path)
+            read = fast5_file[read_name]
+            data['raw'] = read.get_raw_g0()[::-1]
+            data['seq'] = read.get_rev_seq(basecall_group) + '-'
+            if 'u' in data['seq'].lower():
+                data['rna'] = True
+            data['traces'] = read.get_traces(basecall_group)[::-1]
+            data['moves'] = read.get_moves(basecall_group)[::-1]
+            data['start'] = len(data['raw']) - read.get_start(basecall_group)
+            data['steps'] = read.get_step(basecall_group)
+            data['base_positions'] = [data['start'] % data['steps'],
+                                      *[len(data['raw']) - x for x in reversed(read.get_basepositions(basecall_group))]]
+        except KeyError:
+            data['error'] = True
+        
+        return data
+    
     @app.callback(
         [Output('load_info', 'value'), Output('tabs', 'value')],
         [Input('reads', 'active_cell'), Input('basecalls', 'value')],
@@ -130,12 +136,20 @@ def graph_callbacks(app):
         read_name = read_name_list['row_id']
         value = [path, read_name, basecall_group]
         j_value = json.dumps(value)
-        # fetch_read(path, read_name, basecall_group)
+        fetch_read(j_value)
         return j_value, 'tab-preview'
+
+    @app.callback(
+        Output('start_info', 'value'),
+        [Input('load_info', 'value')],
+        []
+    )
+    def start_graphs(value):
+        return value
     
     @app.callback(
         Output('graph_preview', 'figure'),
-        [Input('load_info', 'value')],
+        [Input('start_info', 'value')],
         []
     )
     def generate_preview_graph(j_value):
@@ -159,7 +173,7 @@ def graph_callbacks(app):
     
     @app.callback(
         Output('graph_raw', 'figure'),
-        [Input('load_info', 'value'), Input('graph_options', 'value')],
+        [Input('start_info', 'value'), Input('graph_options', 'value')],
         []
     )
     def generate_raw_graph(j_value, options):
@@ -211,7 +225,7 @@ def graph_callbacks(app):
     
     @app.callback(
         Output('graph_base', 'figure'),
-        [Input('load_info', 'value'), Input('graph_options', 'value'), ],
+        [Input('start_info', 'value'), Input('graph_options', 'value'), ],
         []
     )
     def generate_base_graph(j_value, options):
@@ -263,7 +277,7 @@ def graph_callbacks(app):
     
     @app.callback(
         Output('graph_prob', 'figure'),
-        [Input('load_info', 'value'), Input('logo_options', 'value'), ],
+        [Input('start_info', 'value'), Input('logo_options', 'value'), ],
         []
     )
     def generate_logo(j_value, option):
@@ -362,21 +376,19 @@ def gernerate_base_legend(fig):
 
 
 def generate_base_shapes(base_positions, max_raw, seq):
-    shapes = []
-    for i, x in enumerate(base_positions[:-1]):
-        shape = go.layout.Shape(
-            type="rect",
-            x0=x,
-            y0=0,
-            x1=base_positions[i + 1],
-            y1=max_raw,
-            line=dict(
-                width=0,
-            ),
-            fillcolor=basecolors[seq[i]],
-        )
-        shapes.append(shape)
-    return shapes
+    return [
+        go.layout.Shape(type="rect",
+                        x0=x,
+                        y0=0,
+                        x1=base_positions[i + 1],
+                        y1=max_raw,
+                        line=dict(
+                            width=0,
+                        ),
+                        fillcolor=basecolors[seq[i]],
+                        )
+        for i, x in enumerate(base_positions[:-1])
+    ]
 
 
 def create_error_trace(raw):
@@ -393,7 +405,6 @@ def create_error_trace(raw):
             color="red"
         ),
         line=dict(width=0),
-    
     )
 
 
@@ -409,21 +420,18 @@ def generate_base_legend():
 
 
 def generate_bases(base_positions, base_y_values, seq, number_per_base):
-    scatter_list = []
-    for i in range(0, len(base_positions)):
-        scatter_list.append(
-            go.Scatter(x=[base_positions[i]] * (number_per_base + 1), y=base_y_values, mode='lines+text',
-                       showlegend=False,
-                       hovertext=[f'{seq[i]}<br>{i}'] * number_per_base, hoverinfo="text",
-                       line=dict(color='red'),
-                       legendgroup="bases",
-                       text=[seq[i], *[''] * (number_per_base - 1)],
-                       textposition="top center",
-                       textfont={'color': 'red'},
-                       )
-        
-        )
-    return scatter_list
+    return [
+        go.Scatter(x=[base_positions[i]] * (number_per_base + 1), y=base_y_values, mode='lines+text',
+                   showlegend=False,
+                   hovertext=[f'{seq[i]}<br>{i}'] * number_per_base, hoverinfo="text",
+                   line=dict(color='red'),
+                   legendgroup="bases",
+                   text=[seq[i], *[''] * (number_per_base - 1)],
+                   textposition="top center",
+                   textfont={'color': 'red'},
+                   )
+        for i in range(0, len(base_positions))
+    ]
 
 
 def generate_traces(i, trace_to_raw, y, trace_stack):
