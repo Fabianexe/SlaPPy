@@ -25,46 +25,33 @@ starting SlaPPy:
 slappy
 ``` 
 
-Then the browser based GUI opens.
+Then copy the http-link into your desired browser.
 
 First choose a fast5 file by entering the file path in the upper left window.
-
-**new picture**
  
-![enter path](https://raw.githubusercontent.com/Fabianexe/SlaPPy/master/pictures/path.png "enter the path here")
+![enter path](https://raw.githubusercontent.com/Fabianexe/SlaPPy/master/pictures/enter_path.png "enter the path here")
 
-Then you can select a read out of the fast5 file.
-
-**new picture**
-
-![select_read](https://raw.githubusercontent.com/Fabianexe/SlaPPy/master/pictures/read_selection.png "select a read")
+Then you can select manually a read out of the fast5 file.
 
 It is also possible to filter reads using the read-id.
 
-**new picture**
-
 ![filter reads](https://raw.githubusercontent.com/Fabianexe/SlaPPy/master/pictures/filter_reads.png "Filter reads")
 
-Please choose the ONT Guppy basecall group.
+Please choose the ONT Guppy basecall group for further investigation of the reads.
 
-**new picture**
-
-![select_basecall_group](https://raw.githubusercontent.com/Fabianexe/SlaPPy/master/pictures/basecallgroup.png "select basecall group")
+![select_basecall_group](https://raw.githubusercontent.com/Fabianexe/SlaPPy/master/pictures/basecall_group.png "select basecall group")
 
 ## Displaying options
 
 You can activate stack traces under Graph Options to display the probabilities for the different nucleotides. Also it is possible to normalize the value of current to 0.
 
-**richtigen Pfad einfügen**
-
 ![graph_options](https://raw.githubusercontent.com/Fabianexe/SlaPPy/master/pictures/normalize_graph_option.png "graph_options")
 
 
-There are two different view options: Raw based and Base based. 
+There are two different view options of the squiggle and the related traces and called nucleotides: Raw based and Base based. 
 
-In the Raw based mode, the Squiggle can be seen unchanged. 
+In the Raw based mode, the Squiggle can be seen unchanged with respect to duration. 
 
-**richtigen Pfad angeben**
 
 ![Raw based mode](https://raw.githubusercontent.com/Fabianexe/SlaPPy/master/pictures/raw_based.png "raw based")
 
@@ -88,7 +75,7 @@ By selecting compare data on hover in the menu, you can display the traces at a 
 
 You can select Baseprobability to show a sequence logo representing the probability for each base on a certain position.
 
-![base_prob](https://raw.githubservercontent.com/Fabianexe/SlaPPY/...png "Display base prob.")
+![base_prob](https://raw.githubusercontent.com/Fabianexe/SlaPPY/master/pictures/baseprob_options.png "Display base prob.")
 
 ## Baseprobability options
 
