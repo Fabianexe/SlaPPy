@@ -25,7 +25,7 @@ starting SlaPPy:
 slappy
 ``` 
 
-Then the browser based GUI opens.
+Then copy the http-link into your desired browser.
 
 First choose a fast5 file by entering the file path in the upper left window.
  
