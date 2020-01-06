@@ -13,21 +13,6 @@ from slappy.svg import get_nuc
 import json
 import itertools
 
-colors = [
-             ('rgba(0,255,0,0.5)', 'rgba(0,255,0,1)'),
-             ('rgba(0,0,255,0.5)', 'rgba(0,0,255,1)'),
-             ('rgba(255,255,0,0.5)', 'rgba(255,255,0,1)'),
-             ('rgba(0,255,255,0.5)', 'rgba(0,255,255,1)'),
-         ] * 2
-
-basecolors = {
-    'A': colors[0][0],
-    'C': colors[1][0],
-    'G': colors[2][0],
-    'U': colors[3][0],
-}
-traceid = ['A', 'C', 'G', 'U'] * 2
-
 
 def layout_graphs():
     return [
@@ -118,8 +103,20 @@ def graph_callbacks(app):
             data['moves'] = read.get_moves(basecall_group)[::-1]
             data['start'] = len(data['raw']) - read.get_start(basecall_group)
             data['steps'] = read.get_step(basecall_group)
+            data['colors'] = [
+                         ('rgba(0,255,0,0.5)', 'rgba(0,255,0,1)'),
+                         ('rgba(0,0,255,0.5)', 'rgba(0,0,255,1)'),
+                         ('rgba(255,255,0,0.5)', 'rgba(255,255,0,1)'),
+                         ('rgba(0,255,255,0.5)', 'rgba(0,255,255,1)'),
+                     ]
+            
             data['base_positions'] = [data['start'] % data['steps'],
                                       *[len(data['raw']) - x for x in reversed(read.get_basepositions(basecall_group))]]
+            data['bases'] = ['A', 'C', 'G', 'U' if data['rna'] else 'T']
+            data['basecolors'] = {data['bases'][0]: data['colors'][0][0],
+                                  data['bases'][1]: data['colors'][1][0],
+                                  data['bases'][2]: data['colors'][2][0],
+                                  data['bases'][3]: data['colors'][3][0], }
         except KeyError:
             data['error'] = True
         
@@ -159,14 +156,14 @@ def graph_callbacks(app):
         raw = data['raw']
         
         fig = go.Figure()
-        gernerate_base_legend(fig)
+        gernerate_base_legend(fig, data['bases'], data['basecolors'])
         
         fig.add_trace(generate_raw(raw, [*range(len(raw))]))
         if data['error']:
             fig.add_trace(create_error_trace(raw))
         else:
             max_raw = max(raw)
-            shapes = generate_base_shapes(data['base_positions'], max_raw, data['seq'])
+            shapes = generate_base_shapes(data['base_positions'], max_raw, data['seq'], data['basecolors'])
             fig.update_layout(shapes=shapes)
         fig["layout"]["yaxis"]["fixedrange"] = True
         return fig
@@ -208,15 +205,16 @@ def graph_callbacks(app):
             else:
                 base_y_values = [*[max_raw / x for x in range(1, number_of_base_values)], 0]
             
-            gernerate_base_legend(fig)
+            gernerate_base_legend(fig, data['bases'], data['basecolors'])
             cor = start % steps
             x = [*range(cor, steps * len(traces) + cor + 1, steps)]
-            for i in (0, 4, 1, 5, 2, 6, 3, 7):
+            for i in itertools.chain(*[(j, j+len(data['bases'])) for j in range(len(data['bases']))]):
                 if normalize:
                     y = [*[float(y_value[i]) / 255 for y_value in traces], 0]
                 else:
                     y = [*[float(y_value[i]) / 255 * max_raw for y_value in traces], 0]
-                fig.add_trace(generate_traces(i, x, y, trace_stack))
+                fig.add_trace(generate_traces(x, y, trace_stack, data['bases'][i % len(data['bases'])],
+                                              data['colors'][i % len(data['bases'])]))
             fig.add_trace(generate_raw(raw, [*range(len(raw))]))
             fig.add_trace(generate_base_legend())
             fig.add_traces(generate_bases(base_positions, base_y_values, seq, number_of_base_values))
@@ -262,13 +260,14 @@ def graph_callbacks(app):
             raw_x = generate_raw_x(base_positions, raw)
             trace_x = generate_trace_x(base_positions, steps)
             
-            gernerate_base_legend(fig)
-            for i in (0, 4, 1, 5, 2, 6, 3, 7):
+            gernerate_base_legend(fig, data['bases'], data['basecolors'])
+            for i in itertools.chain(*[(j, j+len(data['bases'])) for j in range(len(data['bases']))]):
                 if normalize:
                     y = [*map(lambda y_value: float(y_value[i]) / 255, traces), 0]
                 else:
                     y = [*map(lambda y_value: float(y_value[i]) / 255 * max_raw, traces), 0]
-                fig.add_trace(generate_traces(i, trace_x, y, trace_stack))
+                fig.add_trace(generate_traces(trace_x, y, trace_stack, data['bases'][i % len(data['bases'])],
+                                              data['colors'][i % len(data['bases'])]))
             fig.add_trace(generate_raw(raw, raw_x))
             fig.add_trace(generate_base_legend())
             fig.add_traces(generate_bases([*range(len(base_positions))], base_y_values, seq, number_of_base_values))
@@ -292,6 +291,7 @@ def graph_callbacks(app):
             seq = data['seq']
             traces = data['traces']
             moves = [1, *data['moves'][:-1]]
+            basecolors = data['basecolors']
             prop = BaseProbertilites(traces, moves)
             if option == 'up':
                 prop.up_to_next_call()
@@ -368,14 +368,14 @@ def generate_trace_x(base_positions, steps):
             ]
 
 
-def gernerate_base_legend(fig):
-    for b in ['U', 'G', 'C', 'A']:
+def gernerate_base_legend(fig, bases, basecolors):
+    for b in bases:
         fig.add_trace(go.Scatter(x=[0, 0], y=[0, 0], mode='lines', showlegend=True,
                                  line=dict(color=basecolors[b]), name=b, legendgroup=b
                                  ))
 
 
-def generate_base_shapes(base_positions, max_raw, seq):
+def generate_base_shapes(base_positions, max_raw, seq, basecolors):
     return [
         go.layout.Shape(type="rect",
                         x0=x,
@@ -434,14 +434,14 @@ def generate_bases(base_positions, base_y_values, seq, number_per_base):
     ]
 
 
-def generate_traces(i, trace_to_raw, y, trace_stack):
+def generate_traces(trace_to_raw, y, trace_stack, traceid, color):
     if trace_stack:
         typ = {'mode': 'lines', 'stackgroup': 'traces'}
     else:
-        typ = {'fill': 'tozeroy', 'fillcolor': colors[i][0]}
+        typ = {'fill': 'tozeroy', 'fillcolor': color[0]}
     return go.Scatter(
         x=trace_to_raw, y=y,
         **typ,
-        line=dict(color=colors[i][1]), name=traceid[i], legendgroup=traceid[i],
+        line=dict(color=color[1]), name=traceid, legendgroup=traceid,
         showlegend=False,
     )
