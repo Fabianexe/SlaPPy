@@ -5,7 +5,7 @@ from slappy import generate_app
 def main():
     """Running the app with build in websterver"""
     app = generate_app()
-    app.run_server(debug=True, host='0.0.0.0')
+    app.run_server(debug=False)
 
 
 if __name__ == '__main__':
