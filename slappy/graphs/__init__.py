@@ -1,15 +1,16 @@
 import dash_core_components as dcc
 import plotly.graph_objs as go
 from dash.dependencies import Input, Output, State
-
-from slappy.baseprobability import BaseProbertilites
-from slappy.fast5 import Fast5
 from dash.exceptions import PreventUpdate
 import dash_html_components as html
 
 from flask_caching import Cache
 
+from slappy.baseprobability import BaseProbertilites
+from slappy.fast5 import Fast5
 from slappy.svg import get_nuc
+from slappy.search import search
+
 import json
 import itertools
 
@@ -141,7 +142,7 @@ def graph_callbacks(app):
                 data['base_positions'] = read.get_basepositions(basecall_group)
                 data['traces'] = read.get_traces(basecall_group)
                 data['moves'] = read.get_moves(basecall_group)
-                
+        
         except KeyError:
             data['error'] = True
         
@@ -160,7 +161,7 @@ def graph_callbacks(app):
         j_value = json.dumps(value)
         fetch_read(j_value)
         return j_value, 'tab-preview'
-
+    
     @app.callback(
         Output('start_info', 'value'),
         [Input('load_info', 'value')],
@@ -371,6 +372,35 @@ def graph_callbacks(app):
             return {'display': 'block'}
         else:
             return {'display': 'none'}
+    
+    @app.callback(
+        Output('search_results', 'data'),
+        [Input("search", "n_clicks")],
+        [State('search_input', 'value'), State('load_info', 'value')],
+    )
+    def start_search(_, pattern, j_value):
+        if j_value == '':
+            raise PreventUpdate
+        data = fetch_read(j_value)
+        try:
+            seq = data['seq']
+            return list(search(pattern, seq, data['rna']))
+        
+        except KeyError:
+            raise PreventUpdate
+    
+    @app.callback(
+        [Output('javascript', 'run'), Output("open_search", "n_clicks")],
+        [Input("run_search", "n_clicks")],
+        [State('search_results', 'data'), State('search_results', 'selected_rows'), State('load_info', 'value'),
+         State('tabs', 'value')],
+    )
+    def apply_search(_, search_data, ids, j_value, tab):
+        if j_value == '' or ids is None:
+            raise PreventUpdate
+        select = search_data[ids[0]]
+        data = fetch_read(j_value)
+        return create_javascipt(tab, select, data['base_positions']), 0
 
 
 def generate_raw_x(base_positions, raw):
@@ -502,3 +532,24 @@ def generate_traces(trace_to_raw, y, trace_stack, traceid, color):
         line=dict(color=color[1]), name=traceid, legendgroup=traceid,
         showlegend=False,
     )
+
+
+def create_javascipt(tab, select, base_positions):
+    if tab == 'tab-preview':
+        f = base_positions[int(select['from'])-1]
+        t = base_positions[int(select['to'])-1]
+        return f'Plotly.relayout(document.getElementById("graph_preview"), {{"xaxis.range": [{f}, {t}]}})'
+    elif tab == 'tab-raw':
+        f = base_positions[int(select['from'])-1]
+        t = base_positions[int(select['to'])-1]
+        return f'Plotly.relayout(document.getElementById("graph_raw"), {{"xaxis.range": [{f}, {t}]}})'
+    elif tab == 'tab-base':
+        f = select['from'] - 1
+        t = select['to'] - 1
+        return f'Plotly.relayout(document.getElementById("graph_base"), {{"xaxis.range": [{f}, {t}]}})'
+    elif tab == 'tab-prob':
+        f = select['from'] - 1.5
+        t = select['to'] - 1.5
+        return f'Plotly.relayout(document.getElementById("graph_prob"), {{"xaxis.range": [{f}, {t}]}})'
+    
+    return ''
