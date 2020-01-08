@@ -27,14 +27,14 @@ def layout_graphs():
                     )
                 )
             ], id='preview_head'),
-            dcc.Tab(label='Raw based', value='tab-raw', children=[
+            dcc.Tab(label='Signal scale', value='tab-raw', children=[
                 dcc.Loading(
                     dcc.Graph(
                         id='graph_raw',
                     )
                 )
             ], id='raw_head'),
-            dcc.Tab(label='Base based', value='tab-base', children=[
+            dcc.Tab(label='Base scale', value='tab-base', children=[
                 dcc.Loading(
                     dcc.Graph(
                         id='graph_base',
