@@ -127,30 +127,6 @@ class Fast5Read:
                 basepoints.append(start + (step * i))
         return basepoints
     
-    def get_reverse_raw_position(self, position, basecall_group='000'):
-        """ Get the start positions of the basecalls in the raw data.
-        This uses the start and step paremter to calculate the trace positions.
-        Then the moves are used to map the traces to the bases.
-        
-        :param basecall_group: The id of the basecall group as str.
-        :return: The raw positions of the basecalls as list of ints.
-        """
-        moves = self.get_moves(basecall_group)
-        start = self.get_start(basecall_group)
-        step = self.get_step(basecall_group)
-        raw = self.get_raw()
-        seq_length = sum(moves)
-        
-        #+1 for one base and +1 because we search the end for reverse
-        actual_position = seq_length - position + 2
-        base_position = 0
-        for i in range(len(moves)):
-            if moves[i]:
-                base_position += 1
-                if base_position == actual_position:
-                    break
-        raw_position = start + (step * i)
-        return len(raw) - raw_position
 
 class Fast5:
     """The class that represents one multi fast5 file"""

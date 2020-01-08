@@ -4,7 +4,6 @@ from dash_table import DataTable
 from dash.exceptions import PreventUpdate
 from dash.dependencies import Input, Output, State
 from slappy.fast5 import Fast5
-from slappy.search import search
 from slappy.config import search_popovers, popovers
 import dash_bootstrap_components as dbc
 import visdcc
@@ -135,9 +134,6 @@ def create_search_modal():
     )
 
 
-
-
-
 def create_popover(content, target, position):
     return dbc.Popover(
         dbc.PopoverBody(content),
@@ -145,27 +141,7 @@ def create_popover(content, target, position):
     )
 
 
-def create_javascipt(tab, select, read, basecall_group):
-    if tab == 'tab-preview':
-        f = read.get_reverse_raw_position(select['from'], basecall_group)
-        t = read.get_reverse_raw_position(select['to'], basecall_group)
-        return f'Plotly.relayout(document.getElementById("graph_preview"), {{"xaxis.range": [{f}, {t}]}})'
-    elif tab == 'tab-raw':
-        f = read.get_reverse_raw_position(select['from'], basecall_group)
-        t = read.get_reverse_raw_position(select['to'], basecall_group)
-        return f'Plotly.relayout(document.getElementById("graph_raw"), {{"xaxis.range": [{f}, {t}]}})'
-    elif tab == 'tab-base':
-        f = select['from'] - 1
-        t = select['to'] - 1
-        return f'Plotly.relayout(document.getElementById("graph_base"), {{"xaxis.range": [{f}, {t}]}})'
-    elif tab == 'tab-prob':
-        f = select['from'] - 1.5
-        t = select['to'] - 1.5
-        return f'Plotly.relayout(document.getElementById("graph_prob"), {{"xaxis.range": [{f}, {t}]}})'
-    
-    return '''
-    
-    '''
+
 
 
 def menu_callbacks(app):
@@ -210,41 +186,6 @@ def menu_callbacks(app):
         if n1 or n2:
             return not is_open
         return False
-    
-    @app.callback(
-        Output('search_results', 'data'),
-        [Input("search", "n_clicks")],
-        [State('search_input', 'value'), State('reads', 'active_cell'), State('basecalls', 'value'),
-         State('hidden_path', 'value')],
-    )
-    def start_search(_, pattern, read_name_list, basecall_group, path):
-        if path == '' or read_name_list is None:
-            raise PreventUpdate
-        read_name = read_name_list['row_id']
-        fast5_file = Fast5(path)
-        read = fast5_file[read_name]
-        try:
-            seq = read.get_rev_seq(basecall_group)
-            return list(search(pattern, seq))
-        
-        except KeyError:
-            raise PreventUpdate
-    
-    @app.callback(
-        [Output('javascript', 'run'), Output("open_search", "n_clicks")],
-        [Input("run_search", "n_clicks")],
-        [State('search_results', 'data'), State('search_results', 'selected_rows'), State('reads', 'active_cell'),
-         State('basecalls', 'value'),
-         State('hidden_path', 'value'), State('tabs', 'value')],
-    )
-    def apply_search(_, data, ids, read_name_list, basecall_group, path, tab):
-        if path == '' or read_name_list is None or ids is None:
-            raise PreventUpdate
-        read_name = read_name_list['row_id']
-        fast5_file = Fast5(path)
-        read = fast5_file[read_name]
-        select = data[ids[0]]
-        return create_javascipt(tab, select, read, basecall_group), 0
     
     @app.callback(
         [Output(f"{d['target']}_popover", "is_open") for d in search_popovers] +

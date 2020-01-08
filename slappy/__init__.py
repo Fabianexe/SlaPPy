@@ -1,6 +1,6 @@
 """The starting point to create the app. """
 
-__version__ = '0.21'
+__version__ = '0.3'
 """The version of the package"""
 
 

@@ -1,8 +1,8 @@
 import re
 
 
-def create_pattern(pattern, dna=False):
-    ut = 'T' if dna else 'U'
+def create_pattern(pattern, rna=False):
+    ut = 'U' if rna else 'T'
     alphabet = {
         'A': 'A',
         'C': 'C',
@@ -31,8 +31,8 @@ def create_pattern(pattern, dna=False):
     return f'(?=({"".join(new_pattern)}))'
     
     
-def search(search_string, sequence):
-    pattern = create_pattern(search_string)
+def search(search_string, sequence, rna):
+    pattern = create_pattern(search_string, rna)
     for match in re.finditer(pattern, sequence, flags=re.IGNORECASE):
         yield {'from': match.span()[0]+1, 'to': match.span()[0]+1 + len(match.group(1)), 'seq': match.group(1)}
 

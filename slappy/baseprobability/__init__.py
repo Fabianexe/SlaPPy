@@ -1,10 +1,10 @@
 from math import log2
 
-trace_id = ['A', 'C', 'G', 'U']
 
 class BaseProbertilites:
-    def __init__(self, traces, moves):
+    def __init__(self, traces, moves, trace_id):
         self._traces = traces
+        self._trace_id = trace_id
         self._moves = moves
         self._size = sum(moves)
         self._probability = []
@@ -35,7 +35,6 @@ class BaseProbertilites:
                     self._probability.append([k / sum_traces for k in prop])
                 sum_traces = 0
                 prop = [0, 0, 0, 0]
-            
             
             for j in range(8):
                 prop[j % 4] += self._traces[i][j]
@@ -83,8 +82,8 @@ class BaseProbertilites:
     def order_by_probability(self):
         i = 0
         for props in self._probability:
-            i+=1
-            yield sorted([(trace_id[i], x) for i, x in enumerate(props)], key=lambda x: x[1])
+            i += 1
+            yield sorted([(self._trace_id[i], x) for i, x in enumerate(props)], key=lambda x: x[1])
     
     def get_probability(self):
         return self._probability
