@@ -15,6 +15,10 @@ import json
 import itertools
 
 
+use_scatter = go.Scatter
+# use_scatter = go.Scattergl
+
+
 def layout_graphs():
     return [
         dcc.Input(value='', type='hidden', id='load_info'),
@@ -355,7 +359,7 @@ def graph_callbacks(app):
                     prob_sum += prob[1]
             fig.update_layout(shapes=shapes)
             
-            fig.add_trace(go.Scatter(x=[0, len(prop)], y=[0, 2], mode='markers', showlegend=False))
+            fig.add_trace(use_scatter(x=[0, len(prop)], y=[0, 2], mode='markers', showlegend=False))
             fig["layout"]["yaxis"]["fixedrange"] = True
         return fig
     
@@ -453,13 +457,13 @@ def generate_trace_x_dna(base_positions, steps, raw):
 
 def gernerate_base_legend(fig, bases, basecolors):
     for b in bases:
-        fig.add_trace(go.Scatter(x=[0, 0], y=[0, 0], mode='lines', showlegend=True,
+        fig.add_trace(use_scatter(x=[0, 0], y=[0, 0], mode='lines', showlegend=True,
                                  line=dict(color=basecolors[b]), name=b, legendgroup=b
                                  ))
 
 
 def create_error_trace(raw):
-    return go.Scatter(
+    return use_scatter(
         x=[0, len(raw) / 2, len(raw)],
         y=[0, 0, 0],
         mode="lines+text",
@@ -476,7 +480,7 @@ def create_error_trace(raw):
 
 
 def generate_raw(raw, raw_to_base):
-    return go.Scatter(x=raw_to_base, y=raw, line=dict(color='black'), name='Raw')
+    return use_scatter(x=raw_to_base, y=raw, line=dict(color='black'), name='Raw')
 
 
 def generate_bases(fig, base_positions, base_y_values, seq, number_per_base):
@@ -487,7 +491,7 @@ def generate_bases(fig, base_positions, base_y_values, seq, number_per_base):
     hover = ([*[f'{seq[i]}<br>{i}'] * number_per_base, None] for i in range(0, len(base_positions)))
     hover = [*itertools.chain(*hover)]
     fig.add_trace(
-        go.Scatter(
+        use_scatter(
             x=x, y=y, mode='lines',
             showlegend=True,
             name='Moves/Bases',
@@ -504,7 +508,7 @@ def generate_traces(trace_to_raw, y, trace_stack, traceid, color):
         typ = {'mode': 'lines', 'stackgroup': 'traces'}
     else:
         typ = {'fill': 'tozeroy', 'fillcolor': color[0]}
-    return go.Scatter(
+    return use_scatter(
         x=trace_to_raw, y=y,
         **typ,
         line=dict(color=color[1]), name=traceid, legendgroup=traceid,
