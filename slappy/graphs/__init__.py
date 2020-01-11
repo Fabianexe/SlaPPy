@@ -14,8 +14,9 @@ from slappy.search import search
 import json
 import itertools
 
-
 use_scatter = go.Scatter
+
+
 # use_scatter = go.Scattergl
 
 
@@ -197,7 +198,7 @@ def graph_callbacks(app):
             start = data['start']
             steps = data['steps']
             max_raw = max(raw)
-    
+            
             fig.update_layout({
                 'yaxis': {'range': [0, 1 if normalize else max_raw], },
                 'xaxis': {'range': [0, len(raw)], },
@@ -263,7 +264,7 @@ def graph_callbacks(app):
             seq = data['seq']
             traces = data['traces']
             steps = data['steps']
-
+            
             max_raw = max(raw)
             
             fig.update_layout({
@@ -390,7 +391,7 @@ def graph_callbacks(app):
             raise PreventUpdate
     
     @app.callback(
-        [Output('javascript', 'run'), Output("open_search", "n_clicks")],
+        [Output('javascript', 'value'), Output("open_search", "n_clicks")],
         [Input("run_search", "n_clicks")],
         [State('search_results', 'data'), State('search_results', 'selected_rows'), State('load_info', 'value'),
          State('tabs', 'value')],
@@ -401,6 +402,17 @@ def graph_callbacks(app):
         select = search_data[ids[0]]
         data = fetch_read(j_value)
         return create_javascipt(tab, select, data['base_positions']), 0
+
+    app.clientside_callback(
+        """
+        function (value) {
+            eval(value)
+            return '';
+        }
+        """,
+        Output('javascript_out', 'value'),
+        [Input('javascript', 'value')]
+    )
 
 
 def generate_raw_x(base_positions, raw):
@@ -458,8 +470,8 @@ def generate_trace_x_dna(base_positions, steps, raw):
 def gernerate_base_legend(fig, bases, basecolors):
     for b in bases:
         fig.add_trace(use_scatter(x=[0, 0], y=[0, 0], mode='lines', showlegend=True,
-                                 line=dict(color=basecolors[b]), name=b, legendgroup=b
-                                 ))
+                                  line=dict(color=basecolors[b]), name=b, legendgroup=b
+                                  ))
 
 
 def create_error_trace(raw):

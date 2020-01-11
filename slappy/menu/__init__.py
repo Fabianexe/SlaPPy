@@ -6,7 +6,6 @@ from dash.dependencies import Input, Output, State
 from slappy.fast5 import Fast5
 from slappy.config import search_popovers, popovers
 import dash_bootstrap_components as dbc
-import visdcc
 from os import scandir
 
 
@@ -78,7 +77,8 @@ def layout_menu():
             justify='between',
         ),
     ]),
-        visdcc.Run_js(id='javascript'),
+        dcc.Input(value='', type='hidden', id='javascript'),
+        dcc.Input(value='', type='hidden', id='javascript_out'),
         html.Datalist([], id='list-suggested-inputs'),
         create_search_modal(),
         *[create_popover(**d) for d in popovers]
@@ -139,9 +139,6 @@ def create_popover(content, target, position):
         dbc.PopoverBody(content),
         id=f"{target}_popover", target=target, placement=position
     )
-
-
-
 
 
 def menu_callbacks(app):
