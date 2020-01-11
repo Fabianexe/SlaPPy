@@ -126,10 +126,11 @@ class Fast5Read:
             if moves[i]:
                 basepoints.append(start + (step * i))
         return basepoints
-    
+
 
 class Fast5:
     """The class that represents one multi fast5 file"""
+    
     def __init__(self, path, mode='r'):
         """Open the file.
         The file can be open in read (r), append(a) or write(w) modus.
@@ -160,7 +161,8 @@ class Fast5:
         """ Get the basecall groups of the file.
         It is assumed that every read have the same groups thus simply the groups of a random read are returned.
         
-        :return: A tuple of the name of the group as it is saved in the fast5 and the id of the basecall group (three numbers as string).
+        :return: A tuple of the name of the group as it is saved in the fast5 and the id of the basecall group
+        (three numbers as string).
         """
         read = self.root[next(iter(self))]
         for group in read['Analyses']:

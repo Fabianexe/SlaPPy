@@ -182,6 +182,7 @@ def graph_callbacks(app):
         raw = data['raw']
         
         fig = go.Figure()
+        
         gernerate_base_legend(fig, data['bases'], data['basecolors'])
         
         fig.add_trace(generate_raw(raw, [*range(len(raw))]))
@@ -189,8 +190,25 @@ def graph_callbacks(app):
             fig.add_trace(create_error_trace(raw))
         else:
             max_raw = max(raw)
+            
             shapes = generate_base_shapes(data['base_positions'], max_raw, data['seq'], data['basecolors'])
             fig.update_layout(shapes=shapes)
+            fig.update_layout({
+                'yaxis': {'range': [0, max_raw], },
+                'xaxis': {'range': [0, len(raw)], },
+                'xaxis2': {
+                    'visible': True,
+                    'tickvals': data['base_positions'],
+                    'ticktext': list(data['seq']),
+                    'range': [0, len(raw)],
+                    "overlaying": 'x',
+                    "matches": 'x',
+                    "side": 'top',
+                    'tickangle': 0,
+                },
+                'shapes': shapes,
+            })
+            fig.add_trace(go.Scatter(x=[0, 0], y=[0, 0], mode='lines', xaxis='x2',))
         fig["layout"]["yaxis"]["fixedrange"] = True
         return fig
     
@@ -214,6 +232,7 @@ def graph_callbacks(app):
             normalize = True
         
         fig = go.Figure()
+        
         if data['error']:
             fig.add_trace(create_error_trace(raw))
         else:
@@ -222,8 +241,21 @@ def graph_callbacks(app):
             traces = data['traces']
             start = data['start']
             steps = data['steps']
-            
             max_raw = max(raw)
+    
+            fig.update_layout({
+                'yaxis': {'range': [0, 1 if normalize else max_raw], },
+                'xaxis': {'range': [0, len(raw)], },
+                'xaxis2': {
+                    'tickvals': base_positions,
+                    'ticktext': list(seq),
+                    'range': [0, len(raw)],
+                    "overlaying": 'x',
+                    "matches": 'x',
+                    "side": 'top',
+                    'tickangle': 0,
+                },
+            })
             
             if normalize:
                 base_y_values = [*[1 / x for x in range(1, number_of_base_values)], 0]
@@ -244,8 +276,8 @@ def graph_callbacks(app):
                 fig.add_trace(generate_traces(x, y, trace_stack, data['bases'][i % len(data['bases'])],
                                               data['colors'][i % len(data['bases'])]))
             fig.add_trace(generate_raw(raw, [*range(len(raw))]))
-            fig.add_trace(generate_base_legend())
-            fig.add_traces(generate_bases(base_positions, base_y_values, seq, number_of_base_values))
+            generate_bases(fig, base_positions, base_y_values, seq, number_of_base_values)
+            
             fig["layout"]["yaxis"]["fixedrange"] = True
         return fig
     
@@ -276,8 +308,22 @@ def graph_callbacks(app):
             seq = data['seq']
             traces = data['traces']
             steps = data['steps']
-            
+
             max_raw = max(raw)
+            
+            fig.update_layout({
+                'yaxis': {'range': [0, 1 if normalize else max_raw], },
+                'xaxis': {'range': [-1, len(base_positions)], },
+                'xaxis2': {
+                    'tickvals': [*range(len(base_positions))],
+                    'ticktext': list(seq),
+                    'range': [-1, len(base_positions)],
+                    "overlaying": 'x',
+                    "matches": 'x',
+                    "side": 'top',
+                    'tickangle': 0,
+                },
+            })
             
             if normalize:
                 base_y_values = [*[1 / x for x in range(1, number_of_base_values)], 0]
@@ -301,8 +347,7 @@ def graph_callbacks(app):
                 fig.add_trace(generate_traces(trace_x, y, trace_stack, data['bases'][i % len(data['bases'])],
                                               data['colors'][i % len(data['bases'])]))
             fig.add_trace(generate_raw(raw, raw_x))
-            fig.add_trace(generate_base_legend())
-            fig.add_traces(generate_bases([*range(len(base_positions))], base_y_values, seq, number_of_base_values))
+            generate_bases(fig, [*range(len(base_positions))], base_y_values, seq, number_of_base_values)
             fig["layout"]["yaxis"]["fixedrange"] = True
         return fig
     
@@ -499,26 +544,24 @@ def generate_raw(raw, raw_to_base):
     return go.Scatter(x=raw_to_base, y=raw, line=dict(color='black'), name='Raw')
 
 
-def generate_base_legend():
-    return go.Scatter(x=[0, 0], y=[0, 0], mode='lines', showlegend=True,
-                      line=dict(color='red'), name='Moves/Bases',
-                      legendgroup="bases"
-                      )
-
-
-def generate_bases(base_positions, base_y_values, seq, number_per_base):
-    return [
-        go.Scatter(x=[base_positions[i]] * (number_per_base + 1), y=base_y_values, mode='lines+text',
-                   showlegend=False,
-                   hovertext=[f'{seq[i]}<br>{i}'] * number_per_base, hoverinfo="text",
-                   line=dict(color='red'),
-                   legendgroup="bases",
-                   text=[seq[i], *[''] * (number_per_base - 1)],
-                   textposition="top center",
-                   textfont={'color': 'red'},
-                   )
-        for i in range(0, len(base_positions))
-    ]
+def generate_bases(fig, base_positions, base_y_values, seq, number_per_base):
+    x = ([*[base_positions[i]] * number_per_base, None] for i in range(0, len(base_positions)))
+    x = [*itertools.chain(*x)]
+    y = ([*base_y_values, None] for _ in range(0, len(base_positions)))
+    y = [*itertools.chain(*y)]
+    hover = ([*[f'{seq[i]}<br>{i}'] * number_per_base, None] for i in range(0, len(base_positions)))
+    hover = [*itertools.chain(*hover)]
+    fig.add_trace(
+        go.Scatter(
+            x=x, y=y, mode='lines',
+            showlegend=True,
+            name='Moves/Bases',
+            hovertext=hover, hoverinfo="text",
+            line=dict(color='red'),
+            xaxis='x2',
+        
+        )
+    )
 
 
 def generate_traces(trace_to_raw, y, trace_stack, traceid, color):
@@ -536,12 +579,12 @@ def generate_traces(trace_to_raw, y, trace_stack, traceid, color):
 
 def create_javascipt(tab, select, base_positions):
     if tab == 'tab-preview':
-        f = base_positions[int(select['from'])-1]
-        t = base_positions[int(select['to'])-1]
+        f = base_positions[int(select['from']) - 1]
+        t = base_positions[int(select['to']) - 1]
         return f'Plotly.relayout(document.getElementById("graph_preview"), {{"xaxis.range": [{f}, {t}]}})'
     elif tab == 'tab-raw':
-        f = base_positions[int(select['from'])-1]
-        t = base_positions[int(select['to'])-1]
+        f = base_positions[int(select['from']) - 1]
+        t = base_positions[int(select['to']) - 1]
         return f'Plotly.relayout(document.getElementById("graph_raw"), {{"xaxis.range": [{f}, {t}]}})'
     elif tab == 'tab-base':
         f = select['from'] - 1
