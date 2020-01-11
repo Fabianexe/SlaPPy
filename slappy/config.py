@@ -33,10 +33,6 @@ popovers = [
      'target': 'help',
      'position': 'bottom'
      },
-    {'content': ['Show a preview of the Raw', html.Br(), 'data with annotated Bases'],
-     'target': 'preview_head',
-     'position': 'bottom'
-     },
     {'content': ['Show annotated Bases with', html.Br(), 'respect to raw data'],
      'target': 'raw_head',
      'position': 'bottom'

@@ -19,15 +19,8 @@ def layout_graphs():
     return [
         dcc.Input(value='', type='hidden', id='load_info'),
         dcc.Input(value='', type='hidden', id='start_info'),
-        dcc.Tabs(id="tabs", value='tab-preview', children=[
+        dcc.Tabs(id="tabs", value='tab-raw', children=[
             dcc.Tab(disabled=True),
-            dcc.Tab(label='Preview', value='tab-preview', children=[
-                dcc.Loading(
-                    dcc.Graph(
-                        id='graph_preview',
-                    )
-                )
-            ], id='preview_head'),
             dcc.Tab(label='Signal scale', value='tab-raw', children=[
                 dcc.Loading(
                     dcc.Graph(
@@ -149,7 +142,7 @@ def graph_callbacks(app):
         return data
     
     @app.callback(
-        [Output('load_info', 'value'), Output('tabs', 'value')],
+        Output('load_info', 'value'),
         [Input('reads', 'active_cell'), Input('basecalls', 'value')],
         [State('hidden_path', 'value'), ]
     )
@@ -160,7 +153,7 @@ def graph_callbacks(app):
         value = [path, read_name, basecall_group]
         j_value = json.dumps(value)
         fetch_read(j_value)
-        return j_value, 'tab-preview'
+        return j_value
     
     @app.callback(
         Output('start_info', 'value'),
@@ -169,48 +162,6 @@ def graph_callbacks(app):
     )
     def start_graphs(value):
         return value
-    
-    @app.callback(
-        Output('graph_preview', 'figure'),
-        [Input('start_info', 'value')],
-        []
-    )
-    def generate_preview_graph(j_value):
-        if j_value == '':
-            raise PreventUpdate
-        data = fetch_read(j_value)
-        raw = data['raw']
-        
-        fig = go.Figure()
-        
-        gernerate_base_legend(fig, data['bases'], data['basecolors'])
-        
-        fig.add_trace(generate_raw(raw, [*range(len(raw))]))
-        if data['error']:
-            fig.add_trace(create_error_trace(raw))
-        else:
-            max_raw = max(raw)
-            
-            shapes = generate_base_shapes(data['base_positions'], max_raw, data['seq'], data['basecolors'])
-            fig.update_layout(shapes=shapes)
-            fig.update_layout({
-                'yaxis': {'range': [0, max_raw], },
-                'xaxis': {'range': [0, len(raw)], },
-                'xaxis2': {
-                    'visible': True,
-                    'tickvals': data['base_positions'],
-                    'ticktext': list(data['seq']),
-                    'range': [0, len(raw)],
-                    "overlaying": 'x',
-                    "matches": 'x',
-                    "side": 'top',
-                    'tickangle': 0,
-                },
-                'shapes': shapes,
-            })
-            fig.add_trace(go.Scatter(x=[0, 0], y=[0, 0], mode='lines', xaxis='x2',))
-        fig["layout"]["yaxis"]["fixedrange"] = True
-        return fig
     
     @app.callback(
         Output('graph_raw', 'figure'),
@@ -507,22 +458,6 @@ def gernerate_base_legend(fig, bases, basecolors):
                                  ))
 
 
-def generate_base_shapes(base_positions, max_raw, seq, basecolors):
-    return [
-        go.layout.Shape(type="rect",
-                        x0=x,
-                        y0=0,
-                        x1=base_positions[i + 1],
-                        y1=max_raw,
-                        line=dict(
-                            width=0,
-                        ),
-                        fillcolor=basecolors[seq[i]],
-                        )
-        for i, x in enumerate(base_positions[:-1])
-    ]
-
-
 def create_error_trace(raw):
     return go.Scatter(
         x=[0, len(raw) / 2, len(raw)],
@@ -578,11 +513,7 @@ def generate_traces(trace_to_raw, y, trace_stack, traceid, color):
 
 
 def create_javascipt(tab, select, base_positions):
-    if tab == 'tab-preview':
-        f = base_positions[int(select['from']) - 1]
-        t = base_positions[int(select['to']) - 1]
-        return f'Plotly.relayout(document.getElementById("graph_preview"), {{"xaxis.range": [{f}, {t}]}})'
-    elif tab == 'tab-raw':
+    if tab == 'tab-raw':
         f = base_positions[int(select['from']) - 1]
         t = base_positions[int(select['to']) - 1]
         return f'Plotly.relayout(document.getElementById("graph_raw"), {{"xaxis.range": [{f}, {t}]}})'
