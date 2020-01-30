@@ -532,14 +532,14 @@ def create_javascipt(tab, select, base_positions):
     if tab == 'tab-raw':
         f = base_positions[int(select['from']) - 1]
         t = base_positions[int(select['to']) - 1]
-        return f'Plotly.relayout(document.getElementById("graph_raw"), {{"xaxis.range": [{f}, {t}]}})'
+        return f'Plotly.relayout(document.getElementsByClassName("js-plotly-plot")[0], {{"xaxis.range": [{f}, {t}]}})'
     elif tab == 'tab-base':
         f = select['from'] - 1
         t = select['to'] - 1
-        return f'Plotly.relayout(document.getElementById("graph_base"), {{"xaxis.range": [{f}, {t}]}})'
+        return f'Plotly.relayout(document.getElementsByClassName("js-plotly-plot")[0], {{"xaxis.range": [{f}, {t}]}})'
     elif tab == 'tab-prob':
         f = select['from'] - 1.5
         t = select['to'] - 1.5
-        return f'Plotly.relayout(document.getElementById("graph_prob"), {{"xaxis.range": [{f}, {t}]}})'
+        return f'Plotly.relayout(document.getElementsByClassName("js-plotly-plot")[0], {{"xaxis.range": [{f}, {t}]}})'
     
     return ''
