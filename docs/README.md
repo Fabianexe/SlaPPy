@@ -69,10 +69,6 @@ It is also possible by double clicking on a certain nucleotide in the legend to 
 
 ![single_trace](https://raw.githubusercontent.com/Fabianexe/SlaPPy/master/pictures/single_trace.png "single trace")
 
-By selecting compare data on hover in the menu, you can display the traces at a certain position.
-
-![compare data](https://raw.githubusercontent.com/Fabianexe/SlaPPy/master/pictures/compare_hover.png "compare data hover")
-
 You can select Baseprobability to show a sequence logo representing the probability for each base on a certain position.
 
 ![base_prob](https://raw.githubusercontent.com/Fabianexe/SlaPPY/master/pictures/baseprob_options.png "Display base prob.")
