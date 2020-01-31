@@ -48,7 +48,7 @@ You can activate the help function in the lower left corner.
 ## Display options
 
 You can activate stack traces under Graph Options to display the probabilities for the different nucleotides. Also it is possible to normalize the value of current to 1. 
-Negative values base probability are converted to positive numbers.
+Negative raw values are converted to positive numbers.
 
 There are two different view options of the squiggle and the related traces and called nucleotides: "signal scaled" and "base scaled". 
 
@@ -75,11 +75,19 @@ You can select Baseprobability to show a sequence logo representing the probabil
 
 ![base_prob](https://raw.githubusercontent.com/Fabianexe/SlaPPY/master/pictures/baseprob_options.png "Display base prob.")
 
-## Baseprobability options
+### Baseprobability options
 
 There are three different options für displaying the sequence logo of base probabilities:
 - Up to call shows the mean probabilities for the bases between two called bases.
 - At call shows the probabilites for the bases at the time when the most probable base is called. 
-- Around represents the mean probabilities around the time the most probable base is called. therefore time between two basecalls is halved and mean from one half to next half after a basecall is built. This option does not seem to provide any useful results.
+- Around represents the mean probabilities around the time the most probable base is called. Therefore time between two basecalls is halved and mean from one half to next half after a basecall is built. This option does not seem to provide any useful results.
+
 
 ## Search subsequences
+
+You can search for a certain subsequence, mark the position, where the subsequence occured and apply, so the visible subsequence is adjusted in the screen.
+
+![search](https://raw.githubusercontent.com/Fabianexe/SlaPPy/master/pictures/search.png "search subsequence")
+
+
+
