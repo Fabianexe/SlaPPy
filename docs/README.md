@@ -33,7 +33,7 @@ First choose a fast5 file by entering the file path in the upper left window.
 
 Then you can select manually a read out of the fast5 file.
 
-It is also possible to filter reads using the read-id.
+It is also possible to filter reads using the read-ID.
 
 ![filter reads](https://raw.githubusercontent.com/Fabianexe/SlaPPy/master/pictures/filter_reads.png "Filter reads")
 
@@ -41,21 +41,23 @@ Please choose the ONT Guppy basecall group for further investigation of the read
 
 ![select_basecall_group](https://raw.githubusercontent.com/Fabianexe/SlaPPy/master/pictures/basecall_group.png "select basecall group")
 
-## Displaying options
+## Help
 
-You can activate stack traces under Graph Options to display the probabilities for the different nucleotides. Also it is possible to normalize the value of current to 0.
+You can activate the help function in the lower left corner.
 
-![graph_options](https://raw.githubusercontent.com/Fabianexe/SlaPPy/master/pictures/normalize_graph_option.png "graph_options")
+## Display options
 
+You can activate stack traces under Graph Options to display the probabilities for the different nucleotides. Also it is possible to normalize the value of current to 1. 
+Negative raw values are converted to positive numbers.
 
-There are two different view options of the squiggle and the related traces and called nucleotides: Raw based and Base based. 
+There are two different view options of the squiggle and the related traces and called nucleotides: "signal scaled" and "base scaled". 
 
-In the Raw based mode, the Squiggle can be seen unchanged with respect to duration. 
-
+In the signal scaled mode, the Squiggle can be seen unchanged with respect to duration. 
 
 ![Raw based mode](https://raw.githubusercontent.com/Fabianexe/SlaPPy/master/pictures/raw_based.png "raw based")
 
-In the Base based mode, the distances between the nucleotides are normalized to the same length and the squiggle is either stretched or compressed. 
+
+In the base scaled mode, the distances between the nucleotides are normalized to the same length and the squiggle is either stretched or compressed. 
 
 ![Base based mode](https://raw.githubusercontent.com/Fabianexe/SlaPPy/master/pictures/base_based.png "Base based")
 
@@ -69,17 +71,23 @@ It is also possible by double clicking on a certain nucleotide in the legend to 
 
 ![single_trace](https://raw.githubusercontent.com/Fabianexe/SlaPPy/master/pictures/single_trace.png "single trace")
 
-By selecting compare data on hover in the menu, you can display the traces at a certain position.
-
-![compare data](https://raw.githubusercontent.com/Fabianexe/SlaPPy/master/pictures/compare_hover.png "compare data hover")
-
 You can select Baseprobability to show a sequence logo representing the probability for each base on a certain position.
 
 ![base_prob](https://raw.githubusercontent.com/Fabianexe/SlaPPY/master/pictures/baseprob_options.png "Display base prob.")
 
-## Baseprobability options
+### Baseprobability options
 
 There are three different options für displaying the sequence logo of base probabilities:
 - Up to call shows the mean probabilities for the bases between two called bases.
 - At call shows the probabilites for the bases at the time when the most probable base is called. 
-- Around represents the mean probabilities around the time the most probable base is called. therefore time between two basecalls is halved and mean from one half to next half after a basecall is built. This option does not seem to provide any useful results.
+- Around represents the mean probabilities around the time the most probable base is called. Therefore time between two basecalls is halved and mean from one half to next half after a basecall is built. This option does not seem to provide any useful results.
+
+
+## Search subsequences
+
+You can search for a certain subsequence, mark the position, where the subsequence occured and apply, so the visible subsequence is adjusted in the screen.
+
+![search](https://raw.githubusercontent.com/Fabianexe/SlaPPy/master/pictures/search.png "search subsequence")
+
+
+

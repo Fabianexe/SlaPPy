@@ -110,6 +110,10 @@ css = """
 .modal-title {
     width: 100%;
 }
+.dash-table-container .row {
+    margin-left:0;
+    margin-right:0;
+}
 """
 
 def setRouts(app):

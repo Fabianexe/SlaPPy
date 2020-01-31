@@ -18,8 +18,8 @@ setup(
     author='Fabian Gärtner',
     author_email='fabianexe@gmail.com',
     description='SlaPPy - Squiggle and Sequence Plotter in Python',
-    install_requires=['dash', 'h5py', 'numpy', 'dash_daq', 'plotly', 'gunicorn',
-                      'dash-bootstrap-components', 'visdcc', 'flask-caching'],
+    install_requires=['dash>=1.8', 'h5py>=2.10', 'numpy>=1.18', 'dash_daq>=0.3.3', 'plotly>=4.5', 'gunicorn',
+                      'dash-bootstrap-components>=0.8.2', 'flask-caching>=1.8'],
     entry_points={
         'console_scripts': [
             'slappy = slappy.__main__:main'
