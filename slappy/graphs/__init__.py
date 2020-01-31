@@ -15,8 +15,6 @@ import json
 import itertools
 
 use_scatter = go.Scatter
-
-
 # use_scatter = go.Scattergl
 
 
@@ -48,6 +46,19 @@ def layout_graphs():
                 )
             ], id='base_head'),
             dcc.Tab(label='Base probability', value='tab-prob', children=[
+                html.P('A logo with more then 200 Bases is unreadeable. '
+                       'Use the slider or search to determine the shown range.'),
+                dcc.RangeSlider(
+                    min=0,
+                    max=200,
+                    value=[0],
+                    updatemode='drag',
+                    id='logo_range'
+                ),
+                dcc.Input(id='range_from', value='0', disabled=True),
+                ' to ',
+                dcc.Input(id='range_to', value='200', disabled=True),
+                dcc.Input(value='[0,200]', type='hidden', id='hidden_range'),
                 dcc.Loading(
                     [
                         dcc.Graph(
@@ -60,7 +71,7 @@ def layout_graphs():
                     options=[
                         {'label': 'Up next', 'value': 'up'},
                         {'label': 'At call', 'value': 'at'},
-                        {'label': 'Around', 'value': 'ar'},
+                        # {'label': 'Around', 'value': 'ar'},
                     ],
                     value='up',
                     id="logo_options",
@@ -187,7 +198,6 @@ def graph_callbacks(app):
         raw = data['raw']
         
         fig = go.Figure()
-        gernerate_base_legend(fig, data['bases'], data['basecolors'])
         
         fig.add_trace(generate_raw(raw, [*range(len(raw))]))
         if data['error']:
@@ -337,13 +347,25 @@ def graph_callbacks(app):
             generate_bases(fig, [*range(len(base_positions))], base_y_values, seq, number_of_base_values)
             fig["layout"]["yaxis"]["fixedrange"] = True
         return fig
-    
+
     @app.callback(
-        Output('graph_prob', 'figure'),
-        [Input('start_info', 'value'), Input('logo_options', 'value'), ],
+        Output('logo_range', 'max'),
+        [Input('start_info', 'value')],
         []
     )
-    def generate_logo(j_value, option):
+    def generate_logo_range(j_value):
+        if j_value == '':
+            raise PreventUpdate
+        data = fetch_read(j_value)
+        return len(data['base_positions'])
+        
+    @app.callback(
+        Output('graph_prob', 'figure'),
+        [Input('start_info', 'value'), Input('logo_options', 'value'),
+            Input('range_from', 'value'),  Input('range_to', 'value'), ],
+        []
+    )
+    def generate_logo(j_value, option, f, t):
         if j_value == '':
             raise PreventUpdate
         data = fetch_read(j_value)
@@ -358,11 +380,11 @@ def graph_callbacks(app):
             basecolors = data['basecolors']
             prop = BaseProbertilites(traces, moves, data['bases'])
             if option == 'up':
-                prop.up_to_next_call()
+                prop.up_to_next_call(f)
             elif option == 'at':
-                prop.at_call()
+                prop.at_call(f)
             elif option == 'ar':
-                prop.around_call()
+                prop.around_call(f)
             else:
                 raise KeyError()
             prop.make_logo()
@@ -386,12 +408,12 @@ def graph_callbacks(app):
             for i, probabilities in enumerate(prop.order_by_probability()):
                 prob_sum = 0
                 for prob in probabilities:
-                    shape = get_nuc(prob[0], i - 0.5, 1, prob_sum, prob[1], basecolors[prob[0]])
+                    shape = get_nuc(prob[0], f + i - 0.5, 1, prob_sum, prob[1], basecolors[prob[0]])
                     shapes.append(shape)
                     prob_sum += prob[1]
             fig.update_layout(shapes=shapes)
             
-            fig.add_trace(use_scatter(x=[0, len(prop)], y=[0, 2], mode='markers', showlegend=False))
+            fig.add_trace(use_scatter(x=[f, t], y=[0, 2], mode='markers', showlegend=False))
             fig["layout"]["yaxis"]["fixedrange"] = True
         return fig
     
@@ -443,6 +465,17 @@ def graph_callbacks(app):
         """,
         Output('javascript_out', 'value'),
         [Input('javascript', 'value')]
+    )
+
+    app.clientside_callback(
+        """
+        function (value, max) {
+            return [value[0], Math.min(value[0]+200, max)];
+        }
+        """,
+        [Output('range_from', 'value'), Output('range_to', 'value')],
+        [Input('logo_range', 'value')],
+        [State('logo_range', 'max')]
     )
 
 
