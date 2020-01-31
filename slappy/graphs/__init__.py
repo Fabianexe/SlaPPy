@@ -24,8 +24,15 @@ def layout_graphs():
     return [
         dcc.Input(value='', type='hidden', id='load_info'),
         dcc.Input(value='', type='hidden', id='start_info'),
-        dcc.Tabs(id="tabs", value='tab-raw', children=[
+        dcc.Tabs(id="tabs", value='tab-preview', children=[
             dcc.Tab(disabled=True),
+            dcc.Tab(label='Preview', value='tab-preview', children=[
+                dcc.Loading(
+                    dcc.Graph(
+                        id='graph_preview',
+                    )
+                )
+            ], id='preview_head'),
             dcc.Tab(label='Signal scale', value='tab-raw', children=[
                 dcc.Loading(
                     dcc.Graph(
@@ -147,7 +154,7 @@ def graph_callbacks(app):
         return data
     
     @app.callback(
-        Output('load_info', 'value'),
+        [Output('load_info', 'value'), Output('tabs', 'value')],
         [Input('reads', 'active_cell'), Input('basecalls', 'value')],
         [State('hidden_path', 'value'), ]
     )
@@ -158,7 +165,7 @@ def graph_callbacks(app):
         value = [path, read_name, basecall_group]
         j_value = json.dumps(value)
         fetch_read(j_value)
-        return j_value
+        return j_value, 'tab-preview'
     
     @app.callback(
         Output('start_info', 'value'),
@@ -167,6 +174,30 @@ def graph_callbacks(app):
     )
     def start_graphs(value):
         return value
+    
+    @app.callback(
+        Output('graph_preview', 'figure'),
+        [Input('start_info', 'value')],
+        []
+    )
+    def generate_preview_graph(j_value):
+        if j_value == '':
+            raise PreventUpdate
+        data = fetch_read(j_value)
+        raw = data['raw']
+        
+        fig = go.Figure()
+        gernerate_base_legend(fig, data['bases'], data['basecolors'])
+        
+        fig.add_trace(generate_raw(raw, [*range(len(raw))]))
+        if data['error']:
+            fig.add_trace(create_error_trace(raw))
+        else:
+            max_raw = max(raw)
+            traces = generate_base_shapes(data['base_positions'], max_raw, data['seq'], data['basecolors'])
+            fig.add_traces(traces)
+        fig["layout"]["yaxis"]["fixedrange"] = True
+        return fig
     
     @app.callback(
         Output('graph_raw', 'figure'),
@@ -474,6 +505,44 @@ def gernerate_base_legend(fig, bases, basecolors):
                                   ))
 
 
+def generate_base_shapes(base_positions, max_raw, seq, basecolors):
+    baselines = {}
+    baselines_y = {}
+    for i, x in enumerate(base_positions):
+        c = seq[i]
+        if c == '-':
+            continue
+        if c not in baselines:
+            baselines[c] = []
+            baselines_y[c] = []
+        if i == 0 or seq[i-1] != c:
+            baselines[c].append(x)
+            baselines_y[c].append(0)
+            baselines[c].append(x)
+            baselines_y[c].append(max_raw)
+        if i < len(base_positions)-1 and seq[i + 1] != c:
+            baselines[c].append(base_positions[i+1])
+            baselines_y[c].append(max_raw)
+            baselines[c].append(base_positions[i+1])
+            baselines_y[c].append(0)
+
+    ret = []
+    for x in baselines:
+        scat = use_scatter(
+            x=baselines[x], y=baselines_y[x], mode='lines',
+            fill='tozeroy',
+            showlegend=True,
+            name=x,
+            line=dict(color='rgba(0,0,0,0)'),
+            fillcolor=basecolors[x],
+            xaxis='x1',
+            # stackgroup='bases'
+        )
+        ret.append(scat)
+    
+    return ret
+
+
 def create_error_trace(raw):
     return use_scatter(
         x=[0, len(raw) / 2, len(raw)],
@@ -529,7 +598,7 @@ def generate_traces(trace_to_raw, y, trace_stack, traceid, color):
 
 
 def create_javascipt(tab, select, base_positions):
-    if tab == 'tab-raw':
+    if tab == 'tab-raw' or tab == 'tab-preview':
         f = base_positions[int(select['from']) - 1]
         t = base_positions[int(select['to']) - 1]
         return f'Plotly.relayout(document.getElementsByClassName("js-plotly-plot")[0], {{"xaxis.range": [{f}, {t}]}})'
@@ -541,5 +610,4 @@ def create_javascipt(tab, select, base_positions):
         f = select['from'] - 1.5
         t = select['to'] - 1.5
         return f'Plotly.relayout(document.getElementsByClassName("js-plotly-plot")[0], {{"xaxis.range": [{f}, {t}]}})'
-    
     return ''

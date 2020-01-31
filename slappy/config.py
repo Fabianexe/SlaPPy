@@ -51,7 +51,7 @@ popovers = [
      },
     {'content': ['Select the read of the fast5 file'],
      'target': 'read_col',
-     'position': 'right'
+     'position': 'left'
      },
     {'content': ['Select the basecall group', html.Br(), '(only guppy is supported)'],
      'target': 'basecalls',
