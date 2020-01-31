@@ -16,10 +16,12 @@ class BaseProbertilites:
         self._probability = []
 
         i = 0
-        k = 0
-        while i < len(self._traces) and k < f:
+        k = -1
+        while i < len(self._traces):
             if self._moves[i] == 1:
                 k += 1
+                if k == f:
+                    break
             i += 1
         k = 0
         while i < len(self._traces) and k <= 200:
@@ -40,10 +42,12 @@ class BaseProbertilites:
         sum_traces = 0
         prop = [0, 0, 0, 0]
         i = 0
-        k = 0
-        while i < len(self._traces) and k <= f:
+        k = -1
+        while i < len(self._traces):
             if self._moves[i] == 1:
                 k += 1
+                if k == f:
+                    break
             i += 1
         k = 0
         while i < len(self._traces) and k <= 200:
