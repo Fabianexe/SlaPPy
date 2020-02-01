@@ -41,10 +41,6 @@ Please choose the ONT Guppy basecall group for further investigation of the read
 
 ![select_basecall_group](https://raw.githubusercontent.com/Fabianexe/SlaPPy/master/pictures/basecall_group.png "select basecall group")
 
-## Help
-
-You can activate the help function in the lower left corner.
-
 ## Display options
 
 You can activate stack traces under Graph Options to display the probabilities for the different nucleotides. Also it is possible to normalize the value of current to 1. 
@@ -86,6 +82,10 @@ There are three different options für displaying the sequence logo of base prob
 You can search for a certain subsequence, mark the position, where the subsequence occured and apply, so the visible subsequence is adjusted in the screen.
 
 ![search](https://raw.githubusercontent.com/Fabianexe/SlaPPy/master/pictures/search.png "search subsequence")
+
+## Help
+
+You can activate the help function in the lower left corner.
 
 
 
