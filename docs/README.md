@@ -75,13 +75,11 @@ You can select Baseprobability to show a sequence logo representing the probabil
 
 ![base_prob](https://raw.githubusercontent.com/Fabianexe/SlaPPY/master/pictures/baseprob_options.png "Display base prob.")
 
-### Baseprobability options
+The sequence logo is displayed with as subsequence of 200 bases. Use the slider or search to determine the shown range.
 
 There are three different options für displaying the sequence logo of base probabilities:
-- Up to call shows the mean probabilities for the bases between two called bases.
-- At call shows the probabilites for the bases at the time when the most probable base is called. 
-- Around represents the mean probabilities around the time the most probable base is called. Therefore time between two basecalls is halved and mean from one half to next half after a basecall is built. This option does not seem to provide any useful results.
-
+- "Up next" shows the mean probabilities for the bases between two called bases.
+- "At call" shows the probabilites for the bases at the time when the most probable base is called. 
 
 ## Search subsequences
 
