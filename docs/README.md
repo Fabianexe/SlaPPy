@@ -69,11 +69,11 @@ This shows the size of the area in the corresponding color, which can be seen in
 
 It is also possible by double clicking on a certain nucleotide in the legend to show single traces. 
 
-![single_trace](https://raw.githubusercontent.com/Fabianexe/SlaPPy/master/pictures/single_trace.png "single trace")
+![single_trace](https://raw.githubusercontent.com/Fabianexe/SlaPPy/master/pictures/single_trace_raw.png "single trace")
 
 You can select Baseprobability to show a sequence logo representing the probability for each base on a certain position.
 
-![base_prob](https://raw.githubusercontent.com/Fabianexe/SlaPPY/master/pictures/baseprob_options.png "Display base prob.")
+![base_prob](https://raw.githubusercontent.com/Fabianexe/SlaPPY/master/pictures/sequence_logo.png "Display base prob.")
 
 The sequence logo is displayed with as subsequence of 200 bases. Use the slider or search to determine the shown range.
 
