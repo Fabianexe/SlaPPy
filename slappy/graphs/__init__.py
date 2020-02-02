@@ -78,6 +78,10 @@ def layout_graphs():
                     labelStyle={'display': 'inline-block', 'padding': 10}
                 )
             ], id='prob_head'),
+            dcc.Tab(label='Modifications', value='tab-mod', disabled=True, children=[
+                html.Div(id='modifcation_head'),
+                html.P(''),
+            ], id='mod_head'),
         
         ]),
         html.Div([
@@ -158,10 +162,14 @@ def graph_callbacks(app):
                 data['base_positions'] = read.get_basepositions(basecall_group)
                 data['traces'] = read.get_traces(basecall_group)
                 data['moves'] = read.get_moves(basecall_group)
+            data['mod'] = read.has_modification(basecall_group)
+            if data['mod']:
+                data['mod_names'] = read.get_modification_names(basecall_group)
+                data['mod_data'] = read.get_modification(basecall_group)
         
         except KeyError:
             data['error'] = True
-        
+            
         return data
     
     @app.callback(
@@ -455,6 +463,31 @@ def graph_callbacks(app):
         select = search_data[ids[0]]
         data = fetch_read(j_value)
         return create_javascipt(tab, select, data['base_positions']), 0
+
+    @app.callback(
+        Output('mod_head', 'disabled'),
+        [Input('start_info', 'value')],
+        [],
+    )
+    def disable_modifcations(j_value):
+        if j_value == '':
+            raise PreventUpdate
+        data = fetch_read(j_value)
+        return not data['mod']
+    
+    @app.callback(
+        Output('modifcation_head', 'children'),
+        [Input('start_info', 'value')],
+        [],
+    )
+    def prepare_modifcations(j_value):
+        if j_value == '':
+            raise PreventUpdate
+        data = fetch_read(j_value)
+        if not data['mod']:
+            raise PreventUpdate
+        
+        return [html.P(str(data['mod_names'])), html.P(str(data['mod_data'])), html.P(str(data['seq']))]
 
     app.clientside_callback(
         """

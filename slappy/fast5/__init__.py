@@ -1,6 +1,9 @@
 """Classes to interact with Fast5 files"""
 import h5py
 import numpy as np
+import re
+
+replace = re.compile('([ATGCU])')
 
 
 class Fast5Read:
@@ -28,6 +31,37 @@ class Fast5Read:
         :return: The raw data as numpy array
         """
         return np.asarray(self._read['Raw/Signal'])
+    
+    def has_modification(self, basecall_group='000'):
+        """Get the raw data points of the read
+        
+        :return: The raw data as numpy array
+        """
+        path = 'Analyses/Basecall_1D_{group}/BaseCalled_template/'.format(group=basecall_group)
+        return 'ModBaseProbs' in self._read[path]
+    
+    def get_modification_names(self, basecall_group='000'):
+        """Get the raw data points of the read
+        
+        :return: The raw data as numpy array
+        """
+        path = 'Analyses/Basecall_1D_{group}/BaseCalled_template/ModBaseProbs'.format(group=basecall_group)
+        mods = self._read[path].attrs["modified_base_long_names"].decode('UTF-8').split()
+        letters = list(replace.sub('', self._read[path].attrs["output_alphabet"].decode('UTF-8')))
+        return [(mods[i], letters[i]) for i in range(len(mods))]
+    
+    def get_modification(self, basecall_group='000'):
+        """Get the raw data points of the read
+        
+        :return: The raw data as numpy array
+        """
+        path = 'Analyses/Basecall_1D_{group}/BaseCalled_template/ModBaseProbs'.format(group=basecall_group)
+        data = np.asarray(self._read[path])
+        letters = list( self._read[path].attrs["output_alphabet"].decode('UTF-8'))
+        ret = dict()
+        for i in range(len(letters)):
+            ret[letters[i]] = [x[i] for x in data]
+        return ret
     
     def get_raw_g0(self):
         """ Get the raw data points of the read. Where every point with a value <0 is set to 0.
