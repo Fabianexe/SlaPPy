@@ -83,6 +83,8 @@ You can search for a certain subsequence, mark the position, where the subsequen
 
 ![search](https://raw.githubusercontent.com/Fabianexe/SlaPPy/master/pictures/search.png "search subsequence")
 
+Since only a part of the sequence can be displayed as sequence logo, the corresponding area should be selected in the sequence logo beforehand, so that the correct sub-sequence is displayed.
+
 ## Help
 
 You can activate the help function in the lower left corner.
