@@ -4,6 +4,9 @@ from dash.dependencies import Input, Output, State
 from dash.exceptions import PreventUpdate
 import dash_html_components as html
 
+from dash_bio import SequenceViewer
+import dash_bootstrap_components as dbc
+
 from flask_caching import Cache
 
 from slappy.baseprobability import BaseProbertilites
@@ -78,9 +81,12 @@ def layout_graphs():
                     labelStyle={'display': 'inline-block', 'padding': 10}
                 )
             ], id='prob_head'),
-            dcc.Tab(label='Modifications', value='tab-mod', disabled=True, children=[
-                html.Div(id='modifcation_head'),
-                html.P(''),
+            dcc.Tab(label='Sequence', value='tab-seq', children=[
+                SequenceViewer(
+                    id='mod_viewer',
+                    charsPerLine=80,
+                    badge=False,
+                ),
             ], id='mod_head'),
         
         ]),
@@ -98,6 +104,10 @@ def layout_graphs():
         ],
             id='hide_options'
         ),
+        dbc.Container(id='modifcation_head'),
+        dcc.Input(value='', type='hidden', id='mod_values'),
+        dcc.Input(value='', type='hidden', id='mod_values_mok'),
+        dbc.Button('Set Modification', id='activate_mod'),
         html.Embed(src='/logo.svg',
                    style={'maxWidth': '20%', 'maxHeight': '60px', 'position': 'absolute', 'left': 0, 'top': 0},
                    type='image/svg+xml'),
@@ -111,7 +121,7 @@ def graph_callbacks(app):
     @cache.memoize()
     def fetch_read(j_value):
         data = {'raw': None, 'base_positions': None, 'seq': None, 'traces': None, 'error': False, 'moves': None,
-                'start': None, 'steps': None, 'rna': False}
+                'start': None, 'steps': None, 'rna': False, 'mod': False, }
         try:
             path, read_name, basecall_group = json.loads(j_value)
             fast5_file = Fast5(path)
@@ -121,6 +131,8 @@ def graph_callbacks(app):
                 ('rgba(0,0,255,0.5)', 'rgba(0,0,255,1)'),
                 ('rgba(255,255,0,0.5)', 'rgba(255,255,0,1)'),
                 ('rgba(0,255,255,0.5)', 'rgba(0,255,255,1)'),
+                ('rgba(255,0,0,0.5)', 'rgba(255,0,0,1)'),
+                ('rgba(255,0,255,0.5)', 'rgba(255,0,255,1)'),
             ]
             
             if 'u' in read.get_seq(basecall_group).lower():
@@ -196,14 +208,16 @@ def graph_callbacks(app):
     
     @app.callback(
         Output('graph_preview', 'figure'),
-        [Input('start_info', 'value')],
+        [Input('start_info', 'value'), Input('mod_values', 'value'), ],
         []
     )
-    def generate_preview_graph(j_value):
+    def generate_preview_graph(j_value, mods):
         if j_value == '':
             raise PreventUpdate
         data = fetch_read(j_value)
         raw = data['raw']
+
+        insert_mods(data, mods)
         
         fig = go.Figure()
         
@@ -365,7 +379,9 @@ def graph_callbacks(app):
         if j_value == '':
             raise PreventUpdate
         data = fetch_read(j_value)
-        return len(data['base_positions'])
+        if data['base_positions']:
+            return len(data['base_positions'])
+        return 200
         
     @app.callback(
         Output('graph_prob', 'figure'),
@@ -463,18 +479,50 @@ def graph_callbacks(app):
         select = search_data[ids[0]]
         data = fetch_read(j_value)
         return create_javascipt(tab, select, data['base_positions']), 0
-
+    
     @app.callback(
-        Output('mod_head', 'disabled'),
-        [Input('start_info', 'value')],
+        [Output('mod_viewer', 'sequence'), Output('mod_viewer', 'coverage'), Output('mod_viewer', 'legend'), ],
+        [Input('start_info', 'value'), Input('mod_values', 'value'), ],
         [],
     )
-    def disable_modifcations(j_value):
+    def generate_sequence(j_value, mods):
         if j_value == '':
             raise PreventUpdate
+        
         data = fetch_read(j_value)
-        return not data['mod']
-    
+
+        insert_mods(data, mods)
+
+        current_cov = []
+        for i, c in enumerate(data['seq']):
+            if c == '-':
+                continue
+            current_cov.append(
+                {'start': i,
+                 'end': i+1,
+                 'bgcolor': data['basecolors'][c],
+                 }
+            )
+        
+        legend = [{'name': c, 'color': data['basecolors'][c]} for c in data['basecolors'].keys()]
+
+        return [data['seq'], current_cov, legend]
+
+    def insert_mods(data, mods):
+        if mods:
+            j = 4
+            for mod in json.loads(mods):
+                if mod[0]:
+                    mod_d = next(filter(lambda x: x[0] == mod[1], data['mod_names']))
+                    data['basecolors'][mod_d[1]] = data['colors'][j][0]
+                    j += 1
+                    val = int(int(mod[2]) * 2.55)
+                    seq = list(data['seq'])
+                    for i in range(len(seq)):
+                        if data['mod_data'][mod_d[1]][i] >= val:
+                            seq[i] = mod_d[1]
+                    data['seq'] = ''.join(seq)
+
     @app.callback(
         Output('modifcation_head', 'children'),
         [Input('start_info', 'value')],
@@ -484,10 +532,22 @@ def graph_callbacks(app):
         if j_value == '':
             raise PreventUpdate
         data = fetch_read(j_value)
-        if not data['mod']:
-            raise PreventUpdate
-        
-        return [html.P(str(data['mod_names'])), html.P(str(data['mod_data'])), html.P(str(data['seq']))]
+        slider = []
+        if data['mod']:
+            for mod in data['mod_names']:
+                mod_element = [dbc.Col(dcc.Checklist(options=[{'label': mod[0], 'value': mod[0]}]), xs=2),
+                               dbc.Col(mod[1], xs=1), dbc.Col(mod[2], xs=1), dbc.Col(
+                        dcc.RangeSlider(
+                            min=0,
+                            max=100,
+                            value=[50],
+                            updatemode='drag',
+                            marks=dict([(10 * x, f'{10*x}%') for x in range(11)])
+                        ),
+                        xs=8
+                    )]
+                slider.append(dbc.Row(mod_element, id=mod[0]))
+        return slider
 
     app.clientside_callback(
         """
@@ -499,6 +559,29 @@ def graph_callbacks(app):
         Output('javascript_out', 'value'),
         [Input('javascript', 'value')]
     )
+    
+    # app.clientside_callback(
+    #     """
+    #     function (value) {
+    #         fuc = function () {
+    #             arr = []
+    #             document.querySelector('#modifcation_head').querySelectorAll('.row').forEach(function(e) {arr.push([e.querySelector('input').checked, e.id, e.querySelector('.rc-slider-handle').ariaValueNow])});
+    #             nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value").set;
+    #             var input = document.querySelector('#mod_values');
+    #             nativeInputValueSetter.call(input, JSON.stringify(arr));
+    #             var ev2 = new Event('input', { bubbles: true});
+    #             input.dispatchEvent(ev2);
+    #             }
+    #         var observer = new MutationObserver(fuc);
+    #         observer.observe(document.querySelector('#modifcation_head'), {subtree: true, attributes: true,});
+    #         document.querySelector('#modifcation_head').querySelectorAll('input').forEach(function(e){e.addEventListener('click', function (e) {e.target.setAttribute('checked', e.target.checked);});});
+    #
+    #         return '';
+    #     }
+    #     """,
+    #     Output('mod_values_mok', 'value'),
+    #     [Input('modifcation_head', 'children')]
+    # )
 
     app.clientside_callback(
         """
@@ -509,6 +592,25 @@ def graph_callbacks(app):
         [Output('range_from', 'value'), Output('range_to', 'value')],
         [Input('logo_range', 'value')],
         [State('logo_range', 'max')]
+    )
+
+    app.clientside_callback(
+        """
+        function (click) {
+            arr = []
+            document.querySelector('#modifcation_head').querySelectorAll('.row').forEach(
+                function(e) {
+                    arr.push(
+                        [e.querySelector('input').checked, e.id, e.querySelector('.rc-slider-handle').ariaValueNow]
+                    )
+                }
+            );
+            return JSON.stringify(arr);
+        }
+        """,
+        Output('mod_values', 'value'),
+        [Input('activate_mod', 'n_clicks')],
+        []
     )
 
 

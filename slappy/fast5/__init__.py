@@ -47,8 +47,18 @@ class Fast5Read:
         """
         path = 'Analyses/Basecall_1D_{group}/BaseCalled_template/ModBaseProbs'.format(group=basecall_group)
         mods = self._read[path].attrs["modified_base_long_names"].decode('UTF-8').split()
-        letters = list(replace.sub('', self._read[path].attrs["output_alphabet"].decode('UTF-8')))
-        return [(mods[i], letters[i]) for i in range(len(mods))]
+        all_letters = self._read[path].attrs["output_alphabet"].decode('UTF-8')
+        last = ''
+        mod_letter = []
+        i = 0
+        for x in all_letters:
+            if x.lower() in 'atgcu':
+                last = x.upper()
+            else:
+                mod_letter.append((x.upper(), last))
+            i += 1
+            
+        return [(mods[i], mod_letter[i][0], mod_letter[i][1]) for i in range(len(mods))]
     
     def get_modification(self, basecall_group='000'):
         """Get the raw data points of the read
