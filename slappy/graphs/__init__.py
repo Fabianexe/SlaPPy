@@ -13,11 +13,15 @@ from slappy.baseprobability import BaseProbertilites
 from slappy.fast5 import Fast5
 from slappy.svg import get_nuc
 from slappy.search import search
+from slappy.modification import read_modifcations, create_modification_layout, insert_mods, \
+    generate_modiciaton_callbacks
 
 import json
 import itertools
 
 use_scatter = go.Scatter
+
+
 # use_scatter = go.Scattergl
 
 
@@ -104,10 +108,7 @@ def layout_graphs():
         ],
             id='hide_options'
         ),
-        dbc.Container(id='modifcation_head'),
-        dcc.Input(value='', type='hidden', id='mod_values'),
-        dcc.Input(value='', type='hidden', id='mod_values_mok'),
-        dbc.Button('Set Modification', id='activate_mod'),
+        *create_modification_layout(),
         html.Embed(src='/logo.svg',
                    style={'maxWidth': '20%', 'maxHeight': '60px', 'position': 'absolute', 'left': 0, 'top': 0},
                    type='image/svg+xml'),
@@ -174,6 +175,7 @@ def graph_callbacks(app):
                 data['base_positions'] = read.get_basepositions(basecall_group)
                 data['traces'] = read.get_traces(basecall_group)
                 data['moves'] = read.get_moves(basecall_group)
+            read_modifcations(data, read, basecall_group)
             data['mod'] = read.has_modification(basecall_group)
             if data['mod']:
                 data['mod_names'] = read.get_modification_names(basecall_group)
@@ -181,7 +183,7 @@ def graph_callbacks(app):
         
         except KeyError:
             data['error'] = True
-            
+        
         return data
     
     @app.callback(
@@ -216,7 +218,7 @@ def graph_callbacks(app):
             raise PreventUpdate
         data = fetch_read(j_value)
         raw = data['raw']
-
+        
         insert_mods(data, mods)
         
         fig = go.Figure()
@@ -251,15 +253,15 @@ def graph_callbacks(app):
             normalize = True
         
         fig = go.Figure()
-        
         if data['error']:
             fig.add_trace(create_error_trace(raw))
         else:
             base_positions = data['base_positions']
             seq = data['seq']
             traces = data['traces']
-            start = data['start']
             steps = data['steps']
+
+            start = data['start']
             max_raw = max(raw)
             
             fig.update_layout({
@@ -369,7 +371,7 @@ def graph_callbacks(app):
             generate_bases(fig, [*range(len(base_positions))], base_y_values, seq, number_of_base_values)
             fig["layout"]["yaxis"]["fixedrange"] = True
         return fig
-
+    
     @app.callback(
         Output('logo_range', 'max'),
         [Input('start_info', 'value')],
@@ -382,11 +384,11 @@ def graph_callbacks(app):
         if data['base_positions']:
             return len(data['base_positions'])
         return 200
-        
+    
     @app.callback(
         Output('graph_prob', 'figure'),
         [Input('start_info', 'value'), Input('logo_options', 'value'),
-            Input('range_from', 'value'),  Input('range_to', 'value'), ],
+         Input('range_from', 'value'), Input('range_to', 'value'), ],
         []
     )
     def generate_logo(j_value, option, f, t):
@@ -490,65 +492,24 @@ def graph_callbacks(app):
             raise PreventUpdate
         
         data = fetch_read(j_value)
-
+        
         insert_mods(data, mods)
-
+        
         current_cov = []
         for i, c in enumerate(data['seq']):
             if c == '-':
                 continue
             current_cov.append(
                 {'start': i,
-                 'end': i+1,
+                 'end': i + 1,
                  'bgcolor': data['basecolors'][c],
                  }
             )
         
         legend = [{'name': c, 'color': data['basecolors'][c]} for c in data['basecolors'].keys()]
-
+        
         return [data['seq'], current_cov, legend]
-
-    def insert_mods(data, mods):
-        if mods:
-            j = 4
-            for mod in json.loads(mods):
-                if mod[0]:
-                    mod_d = next(filter(lambda x: x[0] == mod[1], data['mod_names']))
-                    data['basecolors'][mod_d[1]] = data['colors'][j][0]
-                    j += 1
-                    val = int(int(mod[2]) * 2.55)
-                    seq = list(data['seq'])
-                    for i in range(len(seq)):
-                        if data['mod_data'][mod_d[1]][i] >= val:
-                            seq[i] = mod_d[1]
-                    data['seq'] = ''.join(seq)
-
-    @app.callback(
-        Output('modifcation_head', 'children'),
-        [Input('start_info', 'value')],
-        [],
-    )
-    def prepare_modifcations(j_value):
-        if j_value == '':
-            raise PreventUpdate
-        data = fetch_read(j_value)
-        slider = []
-        if data['mod']:
-            for mod in data['mod_names']:
-                mod_element = [dbc.Col(dcc.Checklist(options=[{'label': mod[0], 'value': mod[0]}]), xs=2),
-                               dbc.Col(mod[1], xs=1), dbc.Col(mod[2], xs=1), dbc.Col(
-                        dcc.RangeSlider(
-                            min=0,
-                            max=100,
-                            value=[50],
-                            updatemode='drag',
-                            marks=dict([(10 * x, f'{10*x}%') for x in range(11)])
-                        ),
-                        xs=8
-                    )]
-                slider.append(dbc.Row(mod_element, id=mod[0]))
-        return slider
-
+    
     app.clientside_callback(
         """
         function (value) {
@@ -560,29 +521,6 @@ def graph_callbacks(app):
         [Input('javascript', 'value')]
     )
     
-    # app.clientside_callback(
-    #     """
-    #     function (value) {
-    #         fuc = function () {
-    #             arr = []
-    #             document.querySelector('#modifcation_head').querySelectorAll('.row').forEach(function(e) {arr.push([e.querySelector('input').checked, e.id, e.querySelector('.rc-slider-handle').ariaValueNow])});
-    #             nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value").set;
-    #             var input = document.querySelector('#mod_values');
-    #             nativeInputValueSetter.call(input, JSON.stringify(arr));
-    #             var ev2 = new Event('input', { bubbles: true});
-    #             input.dispatchEvent(ev2);
-    #             }
-    #         var observer = new MutationObserver(fuc);
-    #         observer.observe(document.querySelector('#modifcation_head'), {subtree: true, attributes: true,});
-    #         document.querySelector('#modifcation_head').querySelectorAll('input').forEach(function(e){e.addEventListener('click', function (e) {e.target.setAttribute('checked', e.target.checked);});});
-    #
-    #         return '';
-    #     }
-    #     """,
-    #     Output('mod_values_mok', 'value'),
-    #     [Input('modifcation_head', 'children')]
-    # )
-
     app.clientside_callback(
         """
         function (value, max) {
@@ -593,25 +531,8 @@ def graph_callbacks(app):
         [Input('logo_range', 'value')],
         [State('logo_range', 'max')]
     )
-
-    app.clientside_callback(
-        """
-        function (click) {
-            arr = []
-            document.querySelector('#modifcation_head').querySelectorAll('.row').forEach(
-                function(e) {
-                    arr.push(
-                        [e.querySelector('input').checked, e.id, e.querySelector('.rc-slider-handle').ariaValueNow]
-                    )
-                }
-            );
-            return JSON.stringify(arr);
-        }
-        """,
-        Output('mod_values', 'value'),
-        [Input('activate_mod', 'n_clicks')],
-        []
-    )
+    
+    generate_modiciaton_callbacks(app, fetch_read)
 
 
 def generate_raw_x(base_positions, raw):
@@ -683,17 +604,17 @@ def generate_base_shapes(base_positions, max_raw, seq, basecolors):
         if c not in baselines:
             baselines[c] = []
             baselines_y[c] = []
-        if i == 0 or seq[i-1] != c:
+        if i == 0 or seq[i - 1] != c:
             baselines[c].append(x)
             baselines_y[c].append(0)
             baselines[c].append(x)
             baselines_y[c].append(max_raw)
-        if i < len(base_positions)-1 and seq[i + 1] != c:
-            baselines[c].append(base_positions[i+1])
+        if i < len(base_positions) - 1 and seq[i + 1] != c:
+            baselines[c].append(base_positions[i + 1])
             baselines_y[c].append(max_raw)
-            baselines[c].append(base_positions[i+1])
+            baselines[c].append(base_positions[i + 1])
             baselines_y[c].append(0)
-
+    
     ret = []
     for x in baselines:
         scat = use_scatter(
