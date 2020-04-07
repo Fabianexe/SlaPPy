@@ -14,7 +14,7 @@ from slappy.fast5 import Fast5
 from slappy.svg import get_nuc
 from slappy.search import search
 from slappy.modification import read_modifcations, create_modification_layout, insert_mods, \
-    generate_modiciaton_callbacks
+    generate_modification_callbacks
 
 import json
 import itertools
@@ -532,7 +532,7 @@ def graph_callbacks(app):
         [State('logo_range', 'max')]
     )
     
-    generate_modiciaton_callbacks(app, fetch_read)
+    generate_modification_callbacks(app, fetch_read)
 
 
 def generate_raw_x(base_positions, raw):
