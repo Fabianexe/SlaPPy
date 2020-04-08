@@ -235,14 +235,15 @@ def graph_callbacks(app):
     
     @app.callback(
         Output('graph_raw', 'figure'),
-        [Input('start_info', 'value'), Input('graph_options', 'value')],
+        [Input('start_info', 'value'), Input('graph_options', 'value'), Input('mod_values', 'value'), ],
         []
     )
-    def generate_raw_graph(j_value, options):
+    def generate_raw_graph(j_value, options, mods):
         if j_value == '':
             raise PreventUpdate
         data = fetch_read(j_value)
         raw = data['raw']
+        insert_mods(data, mods, True)
         
         number_of_base_values = 5
         trace_stack = False
@@ -260,7 +261,7 @@ def graph_callbacks(app):
             seq = data['seq']
             traces = data['traces']
             steps = data['steps']
-
+            
             start = data['start']
             max_raw = max(raw)
             

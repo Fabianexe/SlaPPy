@@ -41,9 +41,9 @@ class Fast5Read:
         return 'ModBaseProbs' in self._read[path]
     
     def get_modification_names(self, basecall_group='000'):
-        """Get the raw data points of the read
+        """Get the name, symbol and base of all modifications
         
-        :return: The raw data as numpy array
+        :return: An array where one entry is [name, symbol, base]
         """
         path = 'Analyses/Basecall_1D_{group}/BaseCalled_template/ModBaseProbs'.format(group=basecall_group)
         mods = self._read[path].attrs["modified_base_long_names"].decode('UTF-8').split()
@@ -57,17 +57,17 @@ class Fast5Read:
             else:
                 mod_letter.append((x.upper(), last))
             i += 1
-            
+        
         return [(mods[i], mod_letter[i][0], mod_letter[i][1]) for i in range(len(mods))]
     
     def get_modification(self, basecall_group='000'):
-        """Get the raw data points of the read
+        """Get the Modification probaitlieties as an dict.
         
-        :return: The raw data as numpy array
+        :return: A dict where the keys are the symbols and the value is a list of prop for each trace.
         """
         path = 'Analyses/Basecall_1D_{group}/BaseCalled_template/ModBaseProbs'.format(group=basecall_group)
         data = np.asarray(self._read[path])
-        letters = list( self._read[path].attrs["output_alphabet"].decode('UTF-8'))
+        letters = list(self._read[path].attrs["output_alphabet"].decode('UTF-8'))
         ret = dict()
         for i in range(len(letters)):
             ret[letters[i]] = [x[i] for x in data]

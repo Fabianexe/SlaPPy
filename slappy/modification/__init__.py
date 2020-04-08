@@ -24,20 +24,25 @@ def create_modification_layout():
     ]
 
 
-def insert_mods(data, mods):
+def insert_mods(data, mods, traces=False):
     if mods and data['mod']:
         j = 4
-        for mod in json.loads(mods):
-            if mod[0]:
-                mod_d = next(filter(lambda x: x[0] == mod[1], data['mod_names']))
-                data['basecolors'][mod_d[1]] = data['colors'][j][0]
-                j += 1
-                val = int(int(mod[2]) * 2.55)
-                seq = list(data['seq'])
-                for i in range(len(seq)):
-                    if data['mod_data'][mod_d[1]][i] >= val:
-                        seq[i] = mod_d[1]
-                data['seq'] = ''.join(seq)
+        active_mods = [
+            (mod[1], int(mod[2]), *(next(x for x in data['mod_names'] if x[0] == mod[1])[1:]))
+            for mod in json.loads(mods) if mod[0]
+        ]
+        for mod in active_mods:
+            data['basecolors'][mod[2]] = data['colors'][j][0]
+            j += 1
+            val = int(mod[1] * 2.55)
+            seq = list(data['seq'])
+            for i in range(len(seq)):
+                if data['mod_data'][mod[2]][i] >= val:
+                    seq[i] = mod[2]
+            data['seq'] = ''.join(seq)
+        
+        if traces:
+            pass
 
 
 def generate_modification_callbacks(app, fetch_read):
@@ -65,8 +70,9 @@ def generate_modification_callbacks(app, fetch_read):
                         is_active.append(mod[0])
                     slider_value = int(preset[mod[0]][1])
                 
-                mod_element = [dbc.Col(dcc.Checklist(options=[{'label': mod[0], 'value': mod[0]}], value=is_active), xs=2),
-                               dbc.Col(mod[1], xs=1), dbc.Col(mod[2], xs=1), dbc.Col(
+                mod_element = [
+                    dbc.Col(dcc.Checklist(options=[{'label': mod[0], 'value': mod[0]}], value=is_active), xs=2),
+                    dbc.Col(mod[1], xs=1), dbc.Col(mod[2], xs=1), dbc.Col(
                         dcc.RangeSlider(
                             min=1,
                             max=100,
