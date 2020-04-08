@@ -37,7 +37,7 @@ def insert_mods(data, mods, traces=False):
             val = int(mod[1] * 2.55)
             seq = list(data['seq'])
             for i in range(len(seq)):
-                if data['mod_data'][mod[2]][i] >= val:
+                if seq[i] == mod[3] and data['mod_data'][mod[2]][i] >= val:
                     seq[i] = mod[2]
             data['seq'] = ''.join(seq)
         
