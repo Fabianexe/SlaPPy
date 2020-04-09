@@ -5,7 +5,6 @@ from dash.exceptions import PreventUpdate
 import dash_html_components as html
 
 from dash_bio import SequenceViewer
-import dash_bootstrap_components as dbc
 
 from flask_caching import Cache
 
@@ -141,11 +140,7 @@ def graph_callbacks(app):
                 data['seq'] = read.get_rev_seq(basecall_group) + '-'
                 data['raw'] = read.get_raw_g0()[::-1]
                 data['bases'] = ['A', 'C', 'G', 'U']
-                data['basecolors'] = {data['bases'][0]: data['colors'][0][0],
-                                      data['bases'][1]: data['colors'][1][0],
-                                      data['bases'][2]: data['colors'][2][0],
-                                      data['bases'][3]: data['colors'][3][0],
-                                      }
+                data['basecolors'] = {data['bases'][i]: data['colors'][i][0] for i in range(len(data['bases']))}
                 data['traceorder'] = [
                     *itertools.chain(*[(j, j + len(data['bases'])) for j in range(len(data['bases']))])
                 ]
@@ -154,7 +149,13 @@ def graph_callbacks(app):
                 data['base_positions'] = [data['start'] % data['steps'],
                                           *[len(data['raw']) - x for x in
                                             reversed(read.get_basepositions(basecall_group))]]
-                data['traces'] = read.get_traces(basecall_group)[::-1]
+                traces = read.get_traces(basecall_group)[::-1]
+                base_number = len(data['bases'])
+                data['traces'] = {
+                    data['bases'][i]:
+                        [[y_value[j] for y_value in traces] for j in [i, i + base_number]]
+                    for i in range(base_number)
+                }
                 data['moves'] = read.get_moves(basecall_group)[::-1]
                 data['moves'] = [1, *data['moves'][:-1]]
             else:
@@ -162,18 +163,21 @@ def graph_callbacks(app):
                 data['seq'] = read.get_rev_seq(basecall_group)
                 data['rna'] = False
                 data['bases'] = ['A', 'C', 'G', 'T']
-                data['basecolors'] = {data['bases'][0]: data['colors'][0][0],
-                                      data['bases'][1]: data['colors'][1][0],
-                                      data['bases'][2]: data['colors'][2][0],
-                                      data['bases'][3]: data['colors'][3][0],
-                                      }
+                data['basecolors'] = {data['bases'][i]: data['colors'][i][0] for i in range(len(data['bases']))}
                 data['traceorder'] = [
                     *itertools.chain(*[(j, j + len(data['bases'])) for j in range(len(data['bases']))])
                 ]
                 data['start'] = read.get_start(basecall_group)
                 data['steps'] = read.get_step(basecall_group)
                 data['base_positions'] = read.get_basepositions(basecall_group)
-                data['traces'] = read.get_traces(basecall_group)
+                
+                traces = read.get_traces(basecall_group)
+                base_number = len(data['bases'])
+                data['traces'] = {
+                    data['bases'][i]:
+                        [[y_value[j] for y_value in traces] for j in [i, i + base_number]]
+                    for i in range(base_number)
+                }
                 data['moves'] = read.get_moves(basecall_group)
             read_modifcations(data, read, basecall_group)
             data['mod'] = read.has_modification(basecall_group)
@@ -289,14 +293,15 @@ def graph_callbacks(app):
             cor = start
             if data['rna']:
                 cor %= steps
-            x = [*range(cor, steps * len(traces) + cor + 1, steps)]
-            for i in data['traceorder']:
-                if normalize:
-                    y = [*[float(y_value[i]) / 255 for y_value in traces], 0]
-                else:
-                    y = [*[float(y_value[i]) / 255 * max_raw for y_value in traces], 0]
-                fig.add_trace(generate_traces(x, y, trace_stack, data['bases'][i % len(data['bases'])],
-                                              data['colors'][i % len(data['bases'])]))
+            x = [*range(cor, steps * len(next(iter(traces.values()))[0]) + cor + 1, steps)]
+            
+            for base in traces:
+                for trace in traces[base]:
+                    if normalize:
+                        y = [*[float(y_value) / 255 for y_value in trace], 0]
+                    else:
+                        y = [*[float(y_value) / 255 * max_raw for y_value in trace], 0]
+                    fig.add_trace(generate_traces(x, y, trace_stack, base, data['basecolors'][base]))
             fig.add_trace(generate_raw(raw, [*range(len(raw))]))
             generate_bases(fig, base_positions, base_y_values, seq, number_of_base_values)
             
@@ -361,13 +366,14 @@ def graph_callbacks(app):
                 trace_x = generate_trace_x_dna(base_positions, steps, raw)
             
             gernerate_base_legend(fig, data['bases'], data['basecolors'])
-            for i in data['traceorder']:
-                if normalize:
-                    y = [*map(lambda y_value: float(y_value[i]) / 255, traces), 0]
-                else:
-                    y = [*map(lambda y_value: float(y_value[i]) / 255 * max_raw, traces), 0]
-                fig.add_trace(generate_traces(trace_x, y, trace_stack, data['bases'][i % len(data['bases'])],
-                                              data['colors'][i % len(data['bases'])]))
+            for base in traces:
+                for trace in traces[base]:
+                    if normalize:
+                        y = [*[float(y_value) / 255 for y_value in trace], 0]
+                    else:
+                        y = [*[float(y_value) / 255 * max_raw for y_value in trace], 0]
+                    fig.add_trace(generate_traces(trace_x, y, trace_stack, base, data['basecolors'][base]))
+
             fig.add_trace(generate_raw(raw, raw_x))
             generate_bases(fig, [*range(len(base_positions))], base_y_values, seq, number_of_base_values)
             fig["layout"]["yaxis"]["fixedrange"] = True
@@ -405,7 +411,7 @@ def graph_callbacks(app):
             traces = data['traces']
             moves = data['moves']
             basecolors = data['basecolors']
-            prop = BaseProbertilites(traces, moves, data['bases'])
+            prop = BaseProbertilites(traces, moves)
             if option == 'up':
                 prop.up_to_next_call(f)
             elif option == 'at':
@@ -678,11 +684,11 @@ def generate_traces(trace_to_raw, y, trace_stack, traceid, color):
     if trace_stack:
         typ = {'mode': 'lines', 'stackgroup': 'traces'}
     else:
-        typ = {'fill': 'tozeroy', 'fillcolor': color[0]}
+        typ = {'fill': 'tozeroy', 'fillcolor': color}
     return use_scatter(
         x=trace_to_raw, y=y,
         **typ,
-        line=dict(color=color[1]), name=traceid, legendgroup=traceid,
+        line=dict(color=color), name=traceid, legendgroup=traceid,
         showlegend=False,
     )
 
