@@ -4,6 +4,7 @@ import json
 from dash.dependencies import Input, Output, State
 from dash.exceptions import PreventUpdate
 import dash_html_components as html
+from copy import deepcopy
 
 
 def read_modifcations(data, read, basecall_group):
@@ -42,7 +43,31 @@ def insert_mods(data, mods, traces=False):
             data['seq'] = ''.join(seq)
         
         if traces:
-            pass
+            moves = data['moves']
+            new_traces = {}
+            for base, trace in data['traces'].items():
+                base_mods = [mod for mod in active_mods if mod[3] == base]
+                if (len(base_mods) == 0):
+                    continue
+                base_trace = deepcopy(trace)
+                for mod in base_mods:
+                    new_trace = []
+                    j = -1
+                    faktor = 0
+                    for i in range(len(moves)):
+                        if moves[i] == 1:
+                            j += 1
+                            faktor = float(data['mod_data'][mod[2]][j])/255
+                        
+                        sum = 0
+                        for k in range(len(trace)):
+                            change = base_trace[k][i] * faktor
+                            trace[k][i] -= change
+                            sum += change
+                        new_trace.append(sum)
+                    new_traces[mod[2]] = new_trace
+            for key, value in new_traces.items():
+                data['traces'][key] = [value]
 
 
 def generate_modification_callbacks(app, fetch_read):

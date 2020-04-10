@@ -289,7 +289,7 @@ def graph_callbacks(app):
             else:
                 base_y_values = [*[max_raw / x for x in range(1, number_of_base_values)], 0]
             
-            gernerate_base_legend(fig, data['bases'], data['basecolors'])
+            gernerate_base_legend(fig, data['basecolors'])
             cor = start
             if data['rna']:
                 cor %= steps
@@ -310,14 +310,15 @@ def graph_callbacks(app):
     
     @app.callback(
         Output('graph_base', 'figure'),
-        [Input('start_info', 'value'), Input('graph_options', 'value'), ],
+        [Input('start_info', 'value'), Input('graph_options', 'value'), Input('mod_values', 'value'), ],
         []
     )
-    def generate_base_graph(j_value, options):
+    def generate_base_graph(j_value, options, mods):
         if j_value == '':
             raise PreventUpdate
         data = fetch_read(j_value)
         raw = data['raw']
+        insert_mods(data, mods, True)
         
         number_of_base_values = 5
         trace_stack = False
@@ -365,7 +366,7 @@ def graph_callbacks(app):
                 raw_x = generate_raw_x_dna(base_positions, raw)
                 trace_x = generate_trace_x_dna(base_positions, steps, raw)
             
-            gernerate_base_legend(fig, data['bases'], data['basecolors'])
+            gernerate_base_legend(fig, data['basecolors'])
             for base in traces:
                 for trace in traces[base]:
                     if normalize:
@@ -373,7 +374,7 @@ def graph_callbacks(app):
                     else:
                         y = [*[float(y_value) / 255 * max_raw for y_value in trace], 0]
                     fig.add_trace(generate_traces(trace_x, y, trace_stack, base, data['basecolors'][base]))
-
+            
             fig.add_trace(generate_raw(raw, raw_x))
             generate_bases(fig, [*range(len(base_positions))], base_y_values, seq, number_of_base_values)
             fig["layout"]["yaxis"]["fixedrange"] = True
@@ -594,8 +595,8 @@ def generate_trace_x_dna(base_positions, steps, raw):
             ]
 
 
-def gernerate_base_legend(fig, bases, basecolors):
-    for b in bases:
+def gernerate_base_legend(fig, basecolors):
+    for b in basecolors.keys():
         fig.add_trace(use_scatter(x=[0, 0], y=[0, 0], mode='lines', showlegend=True,
                                   line=dict(color=basecolors[b]), name=b, legendgroup=b
                                   ))
