@@ -1,19 +1,22 @@
 from math import log2
 from collections import defaultdict
 
+from slappy.modification import get_active_mods
+
 
 class BaseProbertilites:
-    def __init__(self, traces, moves):
+    def __init__(self, traces, moves, frome_position=0):
         self._traces = traces
         self._moves = moves
         self._size = sum(moves)
         self._probability = []
         self._logo = []
+        self._from = frome_position
     
     def __len__(self):
         return self._size
     
-    def at_call(self, f):
+    def at_call(self):
         self._probability = []
         trace_length = len(next(iter(self._traces.values()))[0])
         
@@ -22,7 +25,7 @@ class BaseProbertilites:
         while i < trace_length:
             if self._moves[i] == 1:
                 k += 1
-                if k == f:
+                if k == self._from:
                     break
             i += 1
         k = 0
@@ -35,7 +38,7 @@ class BaseProbertilites:
         
         return self._probability
     
-    def up_to_next_call(self, f):
+    def up_to_next_call(self):
         self._probability = []
         trace_length = len(next(iter(self._traces.values()))[0])
         prop = defaultdict(lambda: 0)
@@ -44,7 +47,7 @@ class BaseProbertilites:
         while i < trace_length:
             if self._moves[i] == 1:
                 k += 1
-                if k == f:
+                if k == self._from:
                     break
             i += 1
         k = 0
@@ -63,7 +66,7 @@ class BaseProbertilites:
             self._probability.append({base: k / sum_traces for base, k in prop.items() if k != 0})
         return self._probability
     
-    def around_call(self, f):
+    def around_call(self):
         trace_length = len(next(iter(self._traces.values()))[0])
         calls = []
         for i in range(trace_length):
@@ -78,11 +81,11 @@ class BaseProbertilites:
             else:
                 next_call = trace_length
             splits.add((calls[i] + next_call) // 2)
-            if i == max(f - 1, 0):
+            if i == max(self._from - 1, 0):
                 saved_split = (calls[i] + next_call) // 2
         self._probability = []
         prop = defaultdict(lambda: 0)
-        i = saved_split + 1 if f != 0 else 0
+        i = saved_split + 1 if self._from != 0 else 0
         pos_count = 0
         while i < trace_length and pos_count <= 200:
             if i in splits:
@@ -94,6 +97,24 @@ class BaseProbertilites:
                 prop[base] += sum([t[i] for t in trace])
             i += 1
         return self._probability
+    
+    def aplly_mod(self, data, mods):
+        if mods and data['mod']:
+            active_mods = get_active_mods(data, mods)
+            
+            for mod in active_mods:
+                val = int(mod[1] * 2.55)
+                seq = list(data['seq'])
+                for i in range(len(self._probability)):
+                    j = self._from + i
+                    if data['mod_data'][mod[2]][j] >= val:
+                        if seq[j] == mod[3]:
+                            seq[j] = mod[2]
+                        if mod[3] in self._probability[i]:
+                            self._probability[i][mod[2]] = self._probability[i].pop(mod[3])
+                data['seq'] = ''.join(seq)
+        
+        pass
     
     def make_logo(self):
         e = 0

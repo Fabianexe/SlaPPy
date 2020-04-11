@@ -396,10 +396,10 @@ def graph_callbacks(app):
     @app.callback(
         Output('graph_prob', 'figure'),
         [Input('start_info', 'value'), Input('logo_options', 'value'),
-         Input('range_from', 'value'), Input('range_to', 'value'), ],
+         Input('range_from', 'value'), Input('range_to', 'value'), Input('mod_values', 'value'), ],
         []
     )
-    def generate_logo(j_value, option, f, t):
+    def generate_logo(j_value, option, f, t, mods):
         if j_value == '':
             raise PreventUpdate
         data = fetch_read(j_value)
@@ -408,19 +408,21 @@ def graph_callbacks(app):
         if data['error']:
             fig.add_trace(create_error_trace([0, 0, 0, 0, 0]))
         else:
-            seq = data['seq']
+            
             traces = data['traces']
             moves = data['moves']
             basecolors = data['basecolors']
-            prop = BaseProbertilites(traces, moves)
+            prop = BaseProbertilites(traces, moves, f)
             if option == 'up':
-                prop.up_to_next_call(f)
+                prop.up_to_next_call()
             elif option == 'at':
-                prop.at_call(f)
+                prop.at_call()
             elif option == 'ar':
-                prop.around_call(f)
+                prop.around_call()
             else:
                 raise KeyError()
+            prop.aplly_mod(data, mods)
+            seq = data['seq']
             prop.make_logo()
             
             fig.update_layout(

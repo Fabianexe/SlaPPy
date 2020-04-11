@@ -27,14 +27,9 @@ def create_modification_layout():
 
 def insert_mods(data, mods, traces=False):
     if mods and data['mod']:
-        j = 4
-        active_mods = [
-            (mod[1], int(mod[2]), *(next(x for x in data['mod_names'] if x[0] == mod[1])[1:]))
-            for mod in json.loads(mods) if mod[0]
-        ]
+        active_mods = get_active_mods(data, mods)
+
         for mod in active_mods:
-            data['basecolors'][mod[2]] = data['colors'][j][0]
-            j += 1
             val = int(mod[1] * 2.55)
             seq = list(data['seq'])
             for i in range(len(seq)):
@@ -47,7 +42,7 @@ def insert_mods(data, mods, traces=False):
             new_traces = {}
             for base, trace in data['traces'].items():
                 base_mods = [mod for mod in active_mods if mod[3] == base]
-                if (len(base_mods) == 0):
+                if len(base_mods) == 0:
                     continue
                 base_trace = deepcopy(trace)
                 for mod in base_mods:
@@ -59,15 +54,28 @@ def insert_mods(data, mods, traces=False):
                             j += 1
                             faktor = float(data['mod_data'][mod[2]][j])/255
                         
-                        sum = 0
+                        new_trace_unit = 0
                         for k in range(len(trace)):
                             change = base_trace[k][i] * faktor
                             trace[k][i] -= change
-                            sum += change
-                        new_trace.append(sum)
+                            new_trace_unit += change
+                        new_trace.append(new_trace_unit)
                     new_traces[mod[2]] = new_trace
             for key, value in new_traces.items():
                 data['traces'][key] = [value]
+
+
+def get_active_mods(data, mods):
+    active_mods = [
+        (mod[1], int(mod[2]), *(next(x for x in data['mod_names'] if x[0] == mod[1])[1:]))
+        for mod in json.loads(mods) if mod[0]
+    ]
+    j = len(data['basecolors'])
+    for mod in active_mods:
+        if mod[2] not in data['basecolors']:
+            data['basecolors'][mod[2]] = data['colors'][j][0]
+            j += 1
+    return active_mods
 
 
 def generate_modification_callbacks(app, fetch_read):
